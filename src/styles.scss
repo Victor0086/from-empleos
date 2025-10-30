@@ -1,0 +1,22 @@
+// =============================================
+// Global Styles for the App
+// =============================================
+
+
+// Fondo global y fuentes
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  background-color: #f7f8fc;
+}
+
+// Helpers globales
+.text-muted {
+  color: #6c757d !important;
+}
+
+.shadow-sm {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08) !important;
+}

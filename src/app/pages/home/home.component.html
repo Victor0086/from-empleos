@@ -1,0 +1,22 @@
+<div class="text-center mb-5">
+  <h1 class="fw-bold">Encuentra trabajo esporádico</h1>
+  <p class="text-muted">Publica o postula a ofertas por área, tipo de empleo y comuna.</p>
+</div>
+
+<div class="row g-4">
+  <div class="col-12 col-md-6 col-lg-4" *ngFor="let o of ofertas">
+    <mat-card class="shadow-sm border-0">
+      <mat-card-header>
+        <mat-card-title>{{ o.titulo }}</mat-card-title>
+        <mat-card-subtitle>{{ o.area }} • {{ o.tipo }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p>{{ o.descripcion }}</p>
+        <span class="badge bg-primary">{{ o.comuna }}</span>
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-raised-button color="primary">Ver</button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+</div>

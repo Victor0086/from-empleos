@@ -1,0 +1,24 @@
+<!-- navbar.component.html (fragmento de enlaces) -->
+<ul class="navbar-nav me-auto mb-2 mb-lg-0">
+  <!-- Trabajador -->
+  <li class="nav-item" *ngIf="auth.isLogged() && auth.role()==='trabajador'">
+    <a class="nav-link" routerLink="/ofertas" routerLinkActive="active">Ofertas</a>
+  </li>
+  <li class="nav-item" *ngIf="auth.isLogged() && auth.role()==='trabajador'">
+    <a class="nav-link" routerLink="/documentos" routerLinkActive="active">Documentos</a>
+  </li>
+
+  <!-- Empresa -->
+  <li class="nav-item" *ngIf="auth.isLogged() && auth.role()==='empleador'">
+    <a class="nav-link" routerLink="/ofertas/nueva" routerLinkActive="active">Publicar</a>
+  </li>
+</ul>
+
+<div class="d-flex">
+  <a *ngIf="!auth.isLogged()" class="btn btn-outline-light d-flex align-items-center" routerLink="/login">
+    <span class="material-icons me-1">login</span> Ingresar
+  </a>
+  <button *ngIf="auth.isLogged()" class="btn btn-warning d-flex align-items-center" (click)="logout()">
+    <span class="material-icons me-1">logout</span> Salir
+  </button>
+</div>
