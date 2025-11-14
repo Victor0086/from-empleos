@@ -1,24 +1,59 @@
-<!-- navbar.component.html (fragmento de enlaces) -->
-<ul class="navbar-nav me-auto mb-2 mb-lg-0">
-  <!-- Trabajador -->
-  <li class="nav-item" *ngIf="auth.isLogged() && auth.role()==='trabajador'">
-    <a class="nav-link" routerLink="/ofertas" routerLinkActive="active">Ofertas</a>
-  </li>
-  <li class="nav-item" *ngIf="auth.isLogged() && auth.role()==='trabajador'">
-    <a class="nav-link" routerLink="/documentos" routerLinkActive="active">Documentos</a>
-  </li>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center" routerLink="/">
+      <span class="material-icons me-1">work</span> InstantJob
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+      <span class="navbar-toggler-icon"></span>
+    </button>
 
-  <!-- Empresa -->
-  <li class="nav-item" *ngIf="auth.isLogged() && auth.role()==='empleador'">
-    <a class="nav-link" routerLink="/ofertas/nueva" routerLinkActive="active">Publicar</a>
-  </li>
-</ul>
+    <div class="collapse navbar-collapse" id="navMain">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <!-- Trabajador -->
+        <li class="nav-item" *ngIf="loginDisplay && auth.role()==='trabajador'">
+          <a class="nav-link" routerLink="/ofertas" routerLinkActive="active">Ofertas</a>
+        </li>
+        <li class="nav-item" *ngIf="loginDisplay && auth.role()==='trabajador'">
+          <a class="nav-link" routerLink="/documentos" routerLinkActive="active">Documentos</a>
+        </li>
 
-<div class="d-flex">
-  <a *ngIf="!auth.isLogged()" class="btn btn-outline-light d-flex align-items-center" routerLink="/login">
-    <span class="material-icons me-1">login</span> Ingresar
-  </a>
-  <button *ngIf="auth.isLogged()" class="btn btn-warning d-flex align-items-center" (click)="logout()">
-    <span class="material-icons me-1">logout</span> Salir
-  </button>
-</div>
+        <!-- Empresa -->
+        <li class="nav-item" *ngIf="loginDisplay && auth.role()==='empleador'">
+          <a class="nav-link" routerLink="/ofertas/nueva" routerLinkActive="active">Publicar</a>
+        </li>
+      </ul>
+
+      <div class="d-flex">
+
+          <!-- Loading spinner durante login -->
+          <div *ngIf="loadingLogin" class="d-flex align-items-center me-2">
+            <span class="spinner"></span>
+          </div>
+
+          <!-- Botones para usuario no autenticado -->
+          <ng-container *ngIf="!loginDisplay && !loadingLogin">
+            <button class="btn btn-outline-light d-flex align-items-center me-2" (click)="login()">
+              <span class="material-icons me-1">login</span> Ingresar
+            </button>
+            <button class="btn btn-primary d-flex align-items-center" (click)="crearCuenta()">
+              <span class="material-icons me-1">person_add</span> Crear cuenta
+            </button>
+          </ng-container>
+
+          <!-- Usuario autenticado: mostrar avatar, correo y botones visibles -->
+          <div *ngIf="loginDisplay && !loadingLogin" class="d-flex align-items-center">
+            <span class="avatar-circle me-2">
+              {{ userEmail ? userEmail.charAt(0).toUpperCase() : '?' }}
+            </span>
+            <span class="text-light me-3 fw-bold">{{ userEmail }}</span>
+            <button class="btn btn-outline-light d-flex align-items-center me-2" (click)="verPerfil()">
+              <span class="material-icons me-1">person</span> Perfil
+            </button>
+            <button class="btn btn-warning d-flex align-items-center" (click)="logout()">
+              <span class="material-icons me-1">logout</span> Cerrar sesión
+            </button>
+          </div>
+      </div>
+    </div>
+  </div>
+</nav>

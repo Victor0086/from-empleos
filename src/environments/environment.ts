@@ -2,20 +2,14 @@ export const environment = {
   production: false,
   msalConfig: {
     auth: {
-      clientId: 'f836bdc5-14d0-4d55-836f-4ac0bdbb3d08', // ID de la app B2C en Azure AD B2C
-      authority: 'https://grupo10duoc.b2clogin.com/grupo10duoc.onmicrosoft.com/B2C_1_grupo10Duoc', //política B2C de login/registro
-      redirectUri: 'http://localhost:4200', 
-      knownAuthorities: ['grupo10duoc.b2clogin.com'] 
-    },
-    cache: {
-      cacheLocation: 'localStorage', // para SPAs
-      storeAuthStateInCookie: false  
+      clientId: '7dd9b923-7aec-407e-b352-7c349ff960a9',
+      authority: 'https://instantjobb2c.b2clogin.com/c5957026-1587-4782-82fe-9605c40565e1/v2.0/',
+      knownAuthorities: ['instantjobb2c.b2clogin.com'],
+      redirectUri: '/'
     }
   },
   apiConfig: {
-    scopes: ['https://grupo10duoc.onmicrosoft.com/api-demo/access_as_user'], 
-    protectedResourceMap: [
-      ['http://localhost:8080', ['https://grupo10duoc.onmicrosoft.com/api-demo/access_as_user']]
-    ]
+    scopes: ['api://7dd9b923-7aec-407e-b352-7c349ff960a9/access_as_user'],
+    uri: 'http://18.214.6.86:8080'
   }
 };

@@ -1,46 +1,100 @@
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
+import { BrowserModule } from '@angular/platform-browser';
+import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS, withFetch, withInterceptors } from '@angular/common/http';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { IPublicClientApplication, PublicClientApplication, InteractionType, BrowserCacheLocation, LogLevel } from '@azure/msal-browser';
+import { MsalInterceptor, MSAL_INSTANCE, MsalInterceptorConfiguration, MsalGuardConfiguration, MSAL_GUARD_CONFIG, MSAL_INTERCEPTOR_CONFIG, MsalService, MsalGuard, MsalBroadcastService } from '@azure/msal-angular';
+import { environment } from '../environments/environment';
+import { MatButtonModule } from '@angular/material/button';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatListModule } from '@angular/material/list';
+import { authInterceptorProvider } from './core/interceptors/auth-interceptor.interceptor';
 
-import { provideAnimations } from '@angular/platform-browser/animations';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+// Callback para logs de MSAL
+export function loggerCallback(logLevel: LogLevel, message: string) {
+  console.log(message);
+}
 
-import {
-  MsalService,
-  MsalGuard,
-  MsalBroadcastService,
-  MSAL_INSTANCE,
-  MSAL_GUARD_CONFIG,
-  MSAL_INTERCEPTOR_CONFIG,
-  MsalInterceptor
-} from '@azure/msal-angular';
+// Instancia de MSAL para Azure AD
+export function MSALInstanceFactory(): IPublicClientApplication {
+  return new PublicClientApplication({
+    auth: {
+      clientId: environment.msalConfig.auth.clientId,
+      authority: environment.msalConfig.auth.authority,
+      redirectUri: environment.msalConfig.auth.redirectUri,
+      postLogoutRedirectUri: environment.msalConfig.auth.redirectUri,
+    },
+    cache: {
+      cacheLocation: BrowserCacheLocation.LocalStorage,
+    },
+    system: {
+      loggerOptions: {
+        loggerCallback,
+        logLevel: LogLevel.Info,
+        piiLoggingEnabled: false,
+      },
+    },
+  });
+}
 
-import { HTTP_INTERCEPTORS } from '@angular/common/http';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'; // ✅ importa aquí
+// Configuración del interceptor MSAL
+export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
+  const protectedResourceMap = new Map<string, Array<string>>();
+  if (environment.apiConfig && environment.apiConfig.uri && environment.apiConfig.scopes) {
+    protectedResourceMap.set(environment.apiConfig.uri, environment.apiConfig.scopes);
+  }
+  return {
+    interactionType: InteractionType.Redirect,
+    protectedResourceMap,
+  };
+}
 
-import { MSALInstanceFactory, MSALGuardConfigFactory, MSALInterceptorConfigFactory } from './auth-config';
+// Configuración del guard MSAL
+export function MSALGuardConfigFactory(): MsalGuardConfiguration {
+  return {
+    interactionType: InteractionType.Redirect,
+    authRequest: {
+      scopes: [...environment.apiConfig.scopes],
+    },
+    loginFailedRoute: '/login-failed',
+  };
+}
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideAnimations(),
-    provideAnimationsAsync(),
-
-    //  HttpClient con inyección de interceptores DI (MSAL)
-    provideHttpClient(withInterceptorsFromDi()),
-
-    //  Configuración MSAL
-    { provide: MSAL_INSTANCE, useFactory: MSALInstanceFactory },
-    { provide: MSAL_GUARD_CONFIG, useFactory: MSALGuardConfigFactory },
-    { provide: MSAL_INTERCEPTOR_CONFIG, useFactory: MSALInterceptorConfigFactory },
-
-    //  Interceptor que agrega el token
-    { provide: HTTP_INTERCEPTORS, useClass: MsalInterceptor, multi: true },
-
-    //  Servicios MSAL
+    importProvidersFrom(
+      BrowserModule,
+      MatButtonModule,
+      MatToolbarModule,
+      MatListModule,
+      MatMenuModule
+    ),
+    provideNoopAnimations(),
+    provideHttpClient(withInterceptorsFromDi(), withFetch(), withInterceptors([authInterceptorProvider])),
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: MsalInterceptor,
+      multi: true,
+    },
+    {
+      provide: MSAL_INSTANCE,
+      useFactory: MSALInstanceFactory,
+    },
+    {
+      provide: MSAL_GUARD_CONFIG,
+      useFactory: MSALGuardConfigFactory,
+    },
+    {
+      provide: MSAL_INTERCEPTOR_CONFIG,
+      useFactory: MSALInterceptorConfigFactory,
+    },
     MsalService,
     MsalGuard,
-    MsalBroadcastService
+    MsalBroadcastService,
   ],
 };

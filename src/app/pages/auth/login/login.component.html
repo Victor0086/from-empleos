@@ -1,1 +1,70 @@
-<p>login works!</p>
+<div class="container-fluid vh-100 d-flex align-items-center justify-content-center bg-light">
+  <div class="row justify-content-center w-100">
+    <div class="col-md-6 col-lg-4">
+      <div class="card shadow">
+        <div class="card-body p-4">
+          <div class="text-center mb-4">
+            <span class="material-icons fs-1 text-primary">login</span>
+            <h2 class="card-title">Iniciar Sesión</h2>
+            <p class="text-muted">Accede a tu cuenta</p>
+          </div>
+
+          <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+            <!-- Email -->
+            <div class="mb-3">
+              <label for="email" class="form-label">Correo electrónico</label>
+              <input 
+                type="email" 
+                class="form-control"
+                [class.is-invalid]="f['email'].invalid && f['email'].touched"
+                id="email" 
+                formControlName="email"
+                placeholder="tu@correo.com">
+              <div *ngIf="f['email'].invalid && f['email'].touched" class="invalid-feedback">
+                <div *ngIf="f['email'].errors?.['required']">El correo es requerido</div>
+                <div *ngIf="f['email'].errors?.['email']">Formato de correo inválido</div>
+              </div>
+            </div>
+
+            <!-- Contraseña -->
+            <div class="mb-3">
+              <label for="password" class="form-label">Contraseña</label>
+              <input 
+                type="password" 
+                class="form-control"
+                [class.is-invalid]="f['password'].invalid && f['password'].touched"
+                id="password" 
+                formControlName="password"
+                placeholder="Tu contraseña">
+              <div *ngIf="f['password'].invalid && f['password'].touched" class="invalid-feedback">
+                <div *ngIf="f['password'].errors?.['required']">La contraseña es requerida</div>
+              </div>
+            </div>
+
+            <!-- Mensaje de error -->
+            <div *ngIf="error" class="alert alert-danger">
+              {{ error }}
+            </div>
+
+            <!-- Botón Submit -->
+            <button 
+              type="submit" 
+              class="btn btn-primary w-100 mb-3"
+              [disabled]="loginForm.invalid || loading">
+              <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+              <span *ngIf="loading">Iniciando sesión...</span>
+              <span *ngIf="!loading">Iniciar sesión</span>
+            </button>
+
+            <!-- Link al registro -->
+            <div class="text-center">
+              <p class="mb-0">¿No tienes cuenta? 
+                <a routerLink="/register" class="text-primary">Crear una cuenta</a>
+              </p>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
