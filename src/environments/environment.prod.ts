@@ -1,18 +1,15 @@
 export const environment = {
-  production: true,
+  production: false,
   msalConfig: {
     auth: {
-      clientId: 'TU_CLIENT_ID_AQUI', // Reemplaza por el clientId de tu app en Azure AD
-      authority: 'https://login.microsoftonline.com/tasgrupo1.onmicrosoft.com', // Tenant de Azure AD
-      redirectUri: 'https://TU-DOMINIO-DEPLOY',
-      knownAuthorities: ['login.microsoftonline.com']
-    },
-    cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: false }
+      clientId: '1b8c46cb-d440-4839-8a95-e876e2025d18',
+      authority: 'https://instantjobb2c.b2clogin.com/instantjobb2c.onmicrosoft.com/B2C_1_SUSI',
+      redirectUri: 'http://localhost:4200/',
+      postLogoutRedirectUri: 'http://localhost:4200/'
+    }
   },
   apiConfig: {
-    scopes: ['api://TU_CLIENT_ID_AQUI/access_as_user'], // Reemplaza por el scope de tu API registrada
-    protectedResourceMap: [
-      ['https://API-DOMINIO-PRODUCCION', ['api://TU_CLIENT_ID_AQUI/access_as_user']]
-    ]
+    url: 'http://localhost:8080/api',
+    scopes: ['https://instantjobb2c.onmicrosoft.com/7dd9b923-7aec-407e-b352-7c349ff960a9/access_as_user']
   }
 };

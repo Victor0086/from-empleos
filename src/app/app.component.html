@@ -13,7 +13,7 @@
   </section>
   <section class="d-flex flex-column align-items-center justify-content-center mt-5">
     <p *ngIf="!loginDisplay">Inicia sesión para acceder a tu perfil y funcionalidades.</p>
-    <p *ngIf="loginDisplay">Hola, {{ userEmail }}!</p>
+    <p *ngIf="loginDisplay">Hola, {{ given_name }}!</p>
   </section>
   <router-outlet></router-outlet>
 </main>

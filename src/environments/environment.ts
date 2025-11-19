@@ -2,14 +2,14 @@ export const environment = {
   production: false,
   msalConfig: {
     auth: {
-      clientId: '7dd9b923-7aec-407e-b352-7c349ff960a9',
-      authority: 'https://instantjobb2c.b2clogin.com/c5957026-1587-4782-82fe-9605c40565e1/v2.0/',
-      knownAuthorities: ['instantjobb2c.b2clogin.com'],
-      redirectUri: '/'
+      clientId: '1b8c46cb-d440-4839-8a95-e876e2025d18',
+      authority: 'https://instantjobb2c.b2clogin.com/instantjobb2c.onmicrosoft.com/B2C_1_SUSI',
+      redirectUri: 'http://localhost:4200/',
+      postLogoutRedirectUri: 'http://localhost:4200/'
     }
   },
   apiConfig: {
-    scopes: ['api://7dd9b923-7aec-407e-b352-7c349ff960a9/access_as_user'],
-    uri: 'http://18.214.6.86:8080'
+    url: 'http://localhost:8080/api',
+    scopes: ['https://instantjobb2c.onmicrosoft.com/7dd9b923-7aec-407e-b352-7c349ff960a9/access_as_user']
   }
 };

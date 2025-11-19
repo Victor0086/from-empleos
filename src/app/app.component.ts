@@ -28,8 +28,8 @@ import { Subject } from 'rxjs';
 import { filter, takeUntil } from 'rxjs/operators';
 import { NavbarComponent } from './shared/navbar/navbar.component';
 import { FooterComponent } from './shared/footer/footer.component';
-import { LoginComponent } from './pages/auth/login/login.component';
 import { RegisterComponent } from './pages/auth/register/register.component';
+import { environment } from '../environments/environment';
 
 
 @Component({
@@ -51,8 +51,6 @@ import { RegisterComponent } from './pages/auth/register/register.component';
     MatDialogModule,
     NavbarComponent,
     FooterComponent,
-    LoginComponent,
-    RegisterComponent,
   ],
 })
 export class AppComponent implements OnInit, OnDestroy {
@@ -60,10 +58,10 @@ export class AppComponent implements OnInit, OnDestroy {
   isIframe = false;
   loginDisplay = false;
   userEmail = '';
+  given_name = '';
   mostrarLoginForm = false;
   mostrarHero = true;
   ngDoCheck() {
-    // Actualiza mostrarHero según la ruta actual
     this.mostrarHero = this.router.url === '/';
   }
   mostrarFormularioLogin() {
@@ -75,7 +73,6 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   onLoginExitoso(datos: { email: string, password: string }) {
-    // Si el login es exitoso, lanzar MSAL popup
     this.loginPopup();
     this.mostrarLoginForm = false;
   }
@@ -90,17 +87,15 @@ export class AppComponent implements OnInit, OnDestroy {
     private dialog: MatDialog,
     private authEvents: AuthEventsService
   ) {
-    // Suscribirse al evento global de registro para abrir el modal
     this.authEvents.register$.subscribe(() => {
       this.abrirRegistroModal();
     });
   }
   abrirRegistroModal() {
-    this.dialog.open(RegisterComponent, {
-      width: '500px',
-      maxWidth: '95vw',
-      autoFocus: false,
-      panelClass: 'modal-register',
+    // Usar MSAL para redirigir al flujo de registro de Azure AD B2C (policy B2C_1_Registro)
+    this.authService.loginRedirect({
+      authority: 'https://instantjobb2c.b2clogin.com/instantjobb2c.onmicrosoft.com/B2C_1_Registro',
+      scopes: ['openid', 'profile', 'email']
     });
   }
 
@@ -120,7 +115,6 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   setLoginDisplayFromMsal() {
-    // Sincroniza el estado de sesión con MSAL (igual que el navbar)
     const accounts = this.authService.instance.getAllAccounts();
     if (accounts.length > 0 && !this.authService.instance.getActiveAccount()) {
       this.authService.instance.setActiveAccount(accounts[0]);
@@ -128,6 +122,7 @@ export class AppComponent implements OnInit, OnDestroy {
     const account = this.authService.instance.getActiveAccount() || accounts[0];
     this.loginDisplay = !!account;
     this.userEmail = account?.username ?? '';
+    this.given_name = account?.name ?? '';
   }
 
   private procesarEventos(): void {
@@ -186,22 +181,38 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  loginPopup() {
-    const login$ = this.msalGuardConfig.authRequest
-      ? this.authService.loginPopup({ ...this.msalGuardConfig.authRequest } as PopupRequest)
-      : this.authService.loginPopup();
+  async loginPopup() {
+    const loginRequest = this.msalGuardConfig.authRequest
+      ? { ...this.msalGuardConfig.authRequest } as PopupRequest
+      : { scopes: [...environment.apiConfig.scopes] } as PopupRequest;
 
-    login$.subscribe((response: AuthenticationResult) => {
-      this.authService.instance.setActiveAccount(response.account);
-      this.setLoginDisplay();
-      this.authService.acquireTokenSilent({ scopes: ['User.Read'] }).subscribe({
-        next: (tokenResponse) => {
-          localStorage.setItem('jwt', tokenResponse.idToken);
-        },
-        error: (error) => {
-          console.error('Error obteniendo token:', error);
-        },
-      });
+    this.authService.loginPopup(loginRequest).subscribe({
+      next: async (response: AuthenticationResult) => {
+        this.authService.instance.setActiveAccount(response.account);
+        this.setLoginDisplay();
+
+        // Mostrar modal de éxito
+        const { LoginSuccessDialogComponent } = await import('./login-success-dialog.component');
+        const dialogRef = this.dialog.open(LoginSuccessDialogComponent, {
+          width: '350px',
+          autoFocus: false,
+        });
+        setTimeout(() => dialogRef.close(), 2000);
+
+        this.authService.acquireTokenSilent({
+          account: response.account,
+          scopes: environment.apiConfig.scopes
+        }).subscribe({
+          next: (tokenResponse) => {
+            console.log('Token de acceso obtenido:', tokenResponse.accessToken);
+            localStorage.setItem('jwt', tokenResponse.idToken); 
+          },
+          error: (error) => {
+            console.error('Error obteniendo token silencioso:', error);
+          },
+        });
+      },
+      error: (error) => console.error('Error en loginPopup:', error)
     });
   }
 

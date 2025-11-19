@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { MsalService } from '@azure/msal-angular';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
@@ -42,9 +43,9 @@ export class AuthService {
   isLogged = signal<boolean>(false);
   role     = signal<UserRole | null>(null);
   
-  private apiUrl = 'http://localhost:3000/api';
+  private apiUrl = environment.apiConfig.url;
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private msal: MsalService) {
     this.restore();
   }
 
@@ -75,8 +76,15 @@ export class AuthService {
   }
 
   // Sincronizar usuario MSAL con backend
-  syncUserWithBackend(userData: SyncUserRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/sync`, userData);
+  async syncUserWithBackend(userData: SyncUserRequest): Promise<Observable<AuthResponse>> {
+    const result = await this.msal.instance.acquireTokenSilent({
+      scopes: ['openid', 'profile', 'email']
+    });
+    const token = result.accessToken;
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+    return this.http.post<AuthResponse>(`${this.apiUrl}/auth/sync`, userData, { headers });
   }
 
   //  Simulación de login: asigna rol según correo

@@ -1,28 +1,35 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { LoginSuccessDialogComponent } from '../../dialogs/login-success-dialog.component';
+
+// Other imports...
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { Inject } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service'; 
 import { AuthEventsService } from '../../core/services/auth-events.service';
 import { MsalService, MsalBroadcastService, MSAL_GUARD_CONFIG, MsalGuardConfiguration } from '@azure/msal-angular';
-import { InteractionStatus, PopupRequest } from '@azure/msal-browser';
+import { PopupRequest, InteractionStatus } from '@azure/msal-browser';
+import { environment } from '../../../environments/environment';
 import { Subject } from 'rxjs';
 import { filter, takeUntil } from 'rxjs/operators';
-
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, MatIconModule, NgIf],
+  imports: [RouterLink, RouterLinkActive, MatIconModule, NgIf, MatDialogModule, LoginSuccessDialogComponent],
   templateUrl: './navbar.component.html'
 })
 export class NavbarComponent implements OnInit, OnDestroy {
+  dialog!: MatDialog;
   // ...existing code...
   verPerfil() {
     this.router.navigate(['/perfil']);
   }
   loginDisplay = false;
   userEmail: string = '';
+  given_name: string = '';
   loadingLogin = false;
   private readonly _destroying$ = new Subject<void>();
 
@@ -31,8 +38,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
     private authService: MsalService,
     private msalBroadcastService: MsalBroadcastService,
     private router: Router,
-    private authEvents: AuthEventsService
+    private authEvents: AuthEventsService,
+    private cdr: ChangeDetectorRef
   ) {
+    this.dialog = inject(MatDialog);
     this.auth.restore();
     // Suscribirse solo al evento global de login
     this.authEvents.login$.subscribe(() => this.login());
@@ -54,6 +63,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
       });
   }
 
+
   ngOnDestroy(): void {
     this._destroying$.next(undefined);
     this._destroying$.complete();
@@ -64,9 +74,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
     if (this.loginDisplay) {
       const account = this.authService.instance.getAllAccounts()[0];
       this.userEmail = account?.username || '';
+      this.given_name = account?.name || '';
       // Guardar token en localStorage para el interceptor
       this.authService.acquireTokenSilent({
-        scopes: ['user.read'],
+        scopes: environment.apiConfig.scopes,
         account: account
       }).subscribe(result => {
         localStorage.setItem('token', result.accessToken);
@@ -77,16 +88,28 @@ export class NavbarComponent implements OnInit, OnDestroy {
   login() {
     this.loadingLogin = true;
     const loginRequest: PopupRequest = {
-      scopes: ['user.read']
+      scopes: environment.apiConfig.scopes
     };
     this.authService.loginPopup(loginRequest)
       .subscribe({
-        next: (result) => {
+        next: async (result) => {
           // Sincronizar usuario con backend después del login MSAL
           this.syncUserWithBackend(result.account);
           // Actualizar estado inmediatamente tras login
           this.setLoginDisplay();
           this.loadingLogin = false;
+
+          // Mostrar modal de éxito
+          const { LoginSuccessDialogComponent } = await import('../../dialogs/login-success-dialog.component');
+          const dialogRef = this.dialog.open(LoginSuccessDialogComponent, {
+            width: '350px',
+            autoFocus: false,
+          });
+          setTimeout(() => {
+            dialogRef.close();
+            this.setLoginDisplay();
+            this.cdr.detectChanges();
+          }, 4000);
         },
         error: (error) => {
           this.loadingLogin = false;
@@ -95,7 +118,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
       });
   }
 
-  private syncUserWithBackend(account: any) {
+  private async syncUserWithBackend(account: any) {
     // Enviar datos del usuario MSAL al backend para sincronización
     const userData = {
       email: account.username,
@@ -105,7 +128,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
     };
 
     // Usar AuthService para sincronizar con backend
-    this.auth.syncUserWithBackend(userData).subscribe({
+    (await this.auth.syncUserWithBackend(userData)).subscribe({
       next: (response) => {
         console.log('Usuario sincronizado con backend:', response);
         // Guardar datos adicionales del backend en localStorage
@@ -127,8 +150,11 @@ export class NavbarComponent implements OnInit, OnDestroy {
     });
   }
   
-    crearCuenta() {
-  // Emitir evento global para abrir el modal de registro
-  this.authEvents.triggerRegister();
-    }
+  crearCuenta() {
+    // Redirigir al flujo de registro de Azure AD B2C
+      this.authService.loginRedirect({
+        authority: 'https://instantjobb2c.b2clogin.com/instantjobb2c.onmicrosoft.com/B2C_1_Registro',
+        scopes: ['openid', 'profile', 'email']
+      });
+  }
 }

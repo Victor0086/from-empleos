@@ -43,9 +43,9 @@
           <!-- Usuario autenticado: mostrar avatar, correo y botones visibles -->
           <div *ngIf="loginDisplay && !loadingLogin" class="d-flex align-items-center">
             <span class="avatar-circle me-2">
-              {{ userEmail ? userEmail.charAt(0).toUpperCase() : '?' }}
+              {{ given_name ? given_name.charAt(0).toUpperCase() : '?' }}
             </span>
-            <span class="text-light me-3 fw-bold">{{ userEmail }}</span>
+            <span class="text-light me-3 fw-bold">{{ given_name }}</span>
             <button class="btn btn-outline-light d-flex align-items-center me-2" (click)="verPerfil()">
               <span class="material-icons me-1">person</span> Perfil
             </button>

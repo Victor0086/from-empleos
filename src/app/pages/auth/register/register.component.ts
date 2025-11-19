@@ -42,7 +42,7 @@ export class RegisterComponent {
     return this.registerForm.controls;
   }
 
-  onSubmit() {
+  async onSubmit() {
     if (this.registerForm.invalid) {
       return;
     }
@@ -50,20 +50,22 @@ export class RegisterComponent {
     this.loading = true;
     this.error = '';
 
-    const { confirmPassword, ...userData } = this.registerForm.value;
-
-    this.authService.register(userData).subscribe({
-      next: (response) => {
-        this.success = 'Usuario creado exitosamente. Redirigiendo al login...';
-        this.loading = false;
-        setTimeout(() => {
-          this.router.navigate(['/login']);
-        }, 2000);
-      },
-      error: (error) => {
-        this.error = error.error?.message || 'Error al crear el usuario';
-        this.loading = false;
-      }
-    });
+    // Usar MSAL para redirigir al flujo de registro de Azure AD B2C
+    try {
+      const msal = await import('@azure/msal-browser');
+      const client = new msal.PublicClientApplication({
+        auth: {
+          clientId: '1b8c46cb-d440-4839-8a95-e876e2025d18',
+          authority: 'https://instantjobb2c.b2clogin.com/instantjobb2c.onmicrosoft.com/B2C_1_signup', // Policy de registro
+          redirectUri: 'http://localhost:4200/'
+        }
+      });
+      client.loginRedirect({
+        scopes: ['openid', 'profile', 'email']
+      });
+    } catch (err) {
+      this.error = 'Error al iniciar el registro en Azure AD B2C';
+      this.loading = false;
+    }
   }
 }
