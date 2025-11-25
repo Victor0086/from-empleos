@@ -9,7 +9,7 @@ export const environment = {
     }
   },
   apiConfig: {
-    url: 'http://localhost:8080/api',
+    url: 'http://localhost:8081/api',
     scopes: ['https://instantjobb2c.onmicrosoft.com/7dd9b923-7aec-407e-b352-7c349ff960a9/access_as_user']
   }
 };

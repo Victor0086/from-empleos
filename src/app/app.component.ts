@@ -92,7 +92,7 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
   abrirRegistroModal() {
-    // Usar MSAL para redirigir al flujo de registro de Azure AD B2C (policy B2C_1_Registro)
+    // se usa MSAL para redirigir al flujo de registro de Azure AD B2C (policy B2C_1_Registro)
     this.authService.loginRedirect({
       authority: 'https://instantjobb2c.b2clogin.com/instantjobb2c.onmicrosoft.com/B2C_1_Registro',
       scopes: ['openid', 'profile', 'email']

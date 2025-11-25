@@ -39,6 +39,18 @@ export interface SyncUserRequest {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+    // Sincronizar usuario completo con backend
+    async syncFullUserWithBackend(usuario: any): Promise<Observable<any>> {
+      const result = await this.msal.instance.acquireTokenSilent({
+        scopes: environment.apiConfig.scopes
+      });
+      const token = result.accessToken;
+      const headers = new HttpHeaders({
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      });
+      return this.http.post<any>(`${this.apiUrl}/auth/sync`, usuario, { headers });
+    }
   // Signals en Angular 16+: se acceden como funciones (auth.isLogged())
   isLogged = signal<boolean>(false);
   role     = signal<UserRole | null>(null);
@@ -78,9 +90,10 @@ export class AuthService {
   // Sincronizar usuario MSAL con backend
   async syncUserWithBackend(userData: SyncUserRequest): Promise<Observable<AuthResponse>> {
     const result = await this.msal.instance.acquireTokenSilent({
-      scopes: ['openid', 'profile', 'email']
+      scopes: environment.apiConfig.scopes
     });
     const token = result.accessToken;
+    console.log('MSAL JWT:', token); // Mostrar el JWT en consola
     const headers = new HttpHeaders({
       'Authorization': `Bearer ${token}`
     });

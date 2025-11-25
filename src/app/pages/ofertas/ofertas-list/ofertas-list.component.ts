@@ -356,6 +356,14 @@ export class OfertasListComponent {
   }
 
   abrirPostulacionModal() {
+    // Validar si el usuario está autenticado
+    const isLogged = localStorage.getItem('auth') !== null;
+    if (isLogged) {
+      // Redirigir a la página de postulación (ajusta la ruta si es necesario)
+      window.location.href = '/postulacion';
+      return;
+    }
+    // Si no está autenticado, mostrar el modal
     this.dialog.open(PostulacionDialogComponent, {
       width: '350px',
       autoFocus: false,

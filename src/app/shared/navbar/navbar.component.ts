@@ -22,10 +22,27 @@ import { filter, takeUntil } from 'rxjs/operators';
   templateUrl: './navbar.component.html'
 })
 export class NavbarComponent implements OnInit, OnDestroy {
+  showMenu = false;
   dialog!: MatDialog;
-  // ...existing code...
+  // En la clase NavbarComponent, agregar propiedad para la foto de perfil:
+  fotoUrl: string = '';
+
   verPerfil() {
     this.router.navigate(['/perfil']);
+  }
+
+  verMiCV() {
+    this.router.navigate(['/perfil']);
+    this.showMenu = false;
+  }
+
+  verMisPostulaciones() {
+    this.router.navigate(['/mis-postulaciones']);
+    this.showMenu = false;
+  }
+
+  toggleMenu() {
+    this.showMenu = !this.showMenu;
   }
   loginDisplay = false;
   userEmail: string = '';
@@ -75,6 +92,20 @@ export class NavbarComponent implements OnInit, OnDestroy {
       const account = this.authService.instance.getAllAccounts()[0];
       this.userEmail = account?.username || '';
       this.given_name = account?.name || '';
+      // Obtener foto de perfil si existe en el perfil guardado
+      const userProfile = localStorage.getItem('userProfile');
+      if (userProfile) {
+        try {
+          const user = JSON.parse(userProfile);
+          this.fotoUrl = user.fotoUrl || '';
+        } catch (e) {
+          console.error('Error al parsear userProfile:', e);
+          this.fotoUrl = '';
+          localStorage.removeItem('userProfile'); // Limpia el dato corrupto
+        }
+      } else {
+        this.fotoUrl = '';
+      }
       // Guardar token en localStorage para el interceptor
       this.authService.acquireTokenSilent({
         scopes: environment.apiConfig.scopes,
@@ -120,9 +151,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   private async syncUserWithBackend(account: any) {
     // Enviar datos del usuario MSAL al backend para sincronización
+    const email = account.idTokenClaims?.emails?.[0] || account.username;
     const userData = {
-      email: account.username,
-      nombre: account.name || account.username,
+      email: email,
+      nombre: account.name || email,
       provider: 'azure-ad',
       azureId: account.homeAccountId
     };
