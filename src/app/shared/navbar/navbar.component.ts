@@ -32,8 +32,18 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   verMiCV() {
+    this.router.navigate(['/perfil']).then(() => {
+      // Forzar recarga del perfil si el componente ya está montado
+      const perfilComp = document.querySelector('app-perfil');
+      if (perfilComp && typeof (perfilComp as any).cargarPerfil === 'function') {
+        (perfilComp as any).cargarPerfil();
+      }
+      this.showMenu = false;
+    });
+  }
+
+  abrirPerfil() {
     this.router.navigate(['/perfil']);
-    this.showMenu = false;
   }
 
   verMisPostulaciones() {

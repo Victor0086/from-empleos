@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { MsalService } from '@azure/msal-angular';
+import { Router, NavigationEnd } from '@angular/router';
 
 interface Usuario {
   nombre: string;
@@ -42,20 +43,36 @@ interface Usuario {
 
 // ...
 
+// ...existing imports and code...
+
 @Component({
   selector: 'app-perfil',
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <!-- Modal de confirmación de guardado -->
+    <!-- Modal de confirmación de inicio de sesión -->
     <div *ngIf="showGuardadoModal" class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.3);">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Datos guardados correctamente</h5>
+            <h5 class="modal-title">Inicio de sesión exitoso</h5>
           </div>
           <div class="modal-body">
-            <p>Los datos personales han sido actualizados.</p>
+            <p>¡Bienvenido! Has iniciado sesión correctamente.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de confirmación de guardado de perfil -->
+    <div *ngIf="showPerfilGuardadoModal" class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.3);">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Perfil guardado correctamente</h5>
+          </div>
+          <div class="modal-body">
+            <p>Los cambios en tu perfil han sido guardados.</p>
           </div>
         </div>
       </div>
@@ -450,14 +467,30 @@ interface Usuario {
   </div>
   `
 })
+
+
 export class PerfilComponent implements OnInit {
+  constructor(private router: Router) {}
     showGuardadoModal = false;
+    showPerfilGuardadoModal = false;
+
+  abrirPerfil() {
+    this.router.navigate(['/perfil']);
+    // this.cargarPerfil();
+  }
 
     mostrarModalGuardado() {
       this.showGuardadoModal = true;
       setTimeout(() => {
         this.showGuardadoModal = false;
       }, 2500);
+    }
+
+    mostrarPerfilGuardadoModal() {
+      this.showPerfilGuardadoModal = true;
+      setTimeout(() => {
+        this.showPerfilGuardadoModal = false;
+      }, 2000);
     }
   usuario: Usuario | null = null;
   nuevoUsuario: Usuario = {
@@ -514,76 +547,116 @@ export class PerfilComponent implements OnInit {
   private msal = inject(MsalService);
 
   ngOnInit() {
-    // Obtener datos del usuario desde el token de Azure AD B2C
-    const account = this.msal.instance.getActiveAccount() || this.msal.instance.getAllAccounts()[0];
-    if (account && account.idTokenClaims) {
-      // Mostrar los claims reales en consola para depuración
-      console.log('Claims del token:', account.idTokenClaims);
-      // Mapear los datos del token a la interfaz Usuario usando claims estándar
-      this.usuario = {
-        nombre: String(account.idTokenClaims['given_name'] || account.idTokenClaims['displayName'] || ''),
-        fotoUrl: '',
-        nacionalidad: String(account.idTokenClaims['country'] || account.idTokenClaims['country_region'] || ''),
-        nacimiento: String(account.idTokenClaims['birthdate'] || ''),
-        genero: String(account.idTokenClaims['gender'] || ''),
-        estadoCivil: String(account.idTokenClaims['maritalStatus'] || ''),
-        licencia: '',
-        contacto: {
-          celular: String(account.idTokenClaims['phone_number'] || ''),
-          telefono: String(account.idTokenClaims['telephone'] || ''),
-          // Ajuste para obtener el email correctamente
-          email: String(
-            account.idTokenClaims['email'] ||
-            account.idTokenClaims['emails']?.[0] ||
-            account.idTokenClaims['preferred_username'] ||
-            account.username || ''
-          ),
-          direccion: String(account.idTokenClaims['city'] || account.idTokenClaims['address'] || ''),
-        },
-        estudios: [],
-        cvAdjunto: ''
-      };
-
-      // Sincronizar usuario con el backend si no existe
-      const usuarioSync = {
-        userId: '', // lo puede generar el backend
-        email: this.usuario.contacto.email,
-        nombreCompleto: this.usuario.nombre,
-        rol: 'trabajador', // o el rol que corresponda
-        fechaCreacion: new Date(), // lo puede generar el backend si no lo envías
-        fotoUrl: this.usuario.fotoUrl || '',
-        nacionalidad: this.usuario.nacionalidad || '',
-        nacimiento: this.usuario.nacimiento || '',
-        genero: this.usuario.genero || '',
-        estadoCivil: this.usuario.estadoCivil || '',
-        licencia: this.usuario.licencia || '',
-        contacto: {
-          email: this.usuario.contacto.email,
-          celular: this.usuario.contacto.celular,
-          telefono: this.usuario.contacto.telefono,
-          direccion: this.usuario.contacto.direccion
-        },
-        estudios: [],
-        experiencias: [],
-        descripcion: this.usuario.descripcion || '',
-        habilidades: this.usuario.habilidades || '',
-        cvAdjunto: this.usuario.cvAdjunto || ''
-      };
-      console.log('Enviando usuario al backend:', usuarioSync);
-      this.auth.syncFullUserWithBackend(usuarioSync).then(obs => {
-        obs.subscribe({
-          next: res => {
-            console.log('Respuesta del backend al sincronizar usuario:', res);
-          },
-          error: err => {
-            console.error('Error al sincronizar usuario con backend:', err);
-            if (err.error && err.error.error) {
-              console.error('Mensaje específico del backend:', err.error.error);
-            }
+    const cargarPerfil = () => {
+      const account = this.msal.instance.getActiveAccount() || this.msal.instance.getAllAccounts()[0];
+      if (account && account.idTokenClaims) {
+        console.log('Claims del token:', account.idTokenClaims);
+        const email = String(
+          account.idTokenClaims['email'] ||
+          account.idTokenClaims['emails']?.[0] ||
+          account.idTokenClaims['preferred_username'] ||
+          account.username || ''
+        );
+        const token = localStorage.getItem('token');
+        fetch(`http://localhost:8081/api/auth/perfil?email=${email}`, {
+          method: 'GET',
+          headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+        })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data && data.usuario) {
+            const u = data.usuario;
+            this.usuario = {
+              nombre: u.nombreCompleto || u.nombre || '',
+              fotoUrl: u.fotoUrl || '',
+              nacionalidad: u.nacionalidad || '',
+              nacimiento: u.nacimiento || '',
+              genero: u.genero || '',
+              estadoCivil: u.estadoCivil || '',
+              licencia: u.licencia || '',
+              contacto: {
+                celular: u.contacto?.celular || '',
+                telefono: u.contacto?.telefono || '',
+                email: u.contacto?.email || email,
+                direccion: u.contacto?.direccion || '',
+              },
+              estudios: Array.isArray(u.estudios) ? u.estudios : [],
+              experiencias: Array.isArray(u.experiencias) ? u.experiencias : [],
+              descripcion: u.descripcion || '',
+              habilidades: u.habilidades || '',
+              cvAdjunto: u.cvAdjunto || ''
+            };
+          } else {
+            const claims = account.idTokenClaims ?? {};
+            this.usuario = {
+              nombre: String(claims['given_name'] || claims['displayName'] || ''),
+              fotoUrl: '',
+              nacionalidad: String(claims['country'] || claims['country_region'] || ''),
+              nacimiento: String(claims['birthdate'] || ''),
+              genero: String(claims['gender'] || ''),
+              estadoCivil: String(claims['maritalStatus'] || ''),
+              licencia: '',
+              contacto: {
+                celular: String(claims['phone_number'] || ''),
+                telefono: String(claims['telephone'] || ''),
+                email: email,
+                direccion: String(claims['city'] || claims['address'] || ''),
+              },
+              estudios: [],
+              experiencias: [],
+              descripcion: '',
+              habilidades: '',
+              cvAdjunto: ''
+            };
+            const usuarioSync = {
+              userId: '',
+              email: this.usuario.contacto.email,
+              nombreCompleto: this.usuario.nombre,
+              rol: 'trabajador',
+              fechaCreacion: new Date(),
+              fotoUrl: this.usuario.fotoUrl || '',
+              nacionalidad: this.usuario.nacionalidad || '',
+              nacimiento: this.usuario.nacimiento || '',
+              genero: this.usuario.genero || '',
+              estadoCivil: this.usuario.estadoCivil || '',
+              licencia: this.usuario.licencia || '',
+              contacto: {
+                email: this.usuario.contacto.email,
+                celular: this.usuario.contacto.celular,
+                telefono: this.usuario.contacto.telefono,
+                direccion: this.usuario.contacto.direccion
+              },
+              estudios: [],
+              experiencias: [],
+              descripcion: this.usuario.descripcion || '',
+              habilidades: this.usuario.habilidades || '',
+              cvAdjunto: this.usuario.cvAdjunto || ''
+            };
+            console.log('Enviando usuario al backend:', usuarioSync);
+            this.auth.syncFullUserWithBackend(usuarioSync).then(obs => {
+              obs.subscribe({
+                next: res => {
+                  console.log('Respuesta del backend al sincronizar usuario:', res);
+                },
+                error: err => {
+                  console.error('Error al sincronizar usuario con backend:', err);
+                  if (err.error && err.error.error) {
+                    console.error('Mensaje específico del backend:', err.error.error);
+                  }
+                }
+              });
+            });
           }
         });
-      });
-    }
+      }
+    };
+
+    this.router.events.subscribe(event => {
+      if (event instanceof NavigationEnd && event.urlAfterRedirects === '/perfil') {
+        cargarPerfil();
+      }
+    });
+    cargarPerfil();
   }
 
   onFotoSelected(event: any) {
@@ -677,9 +750,12 @@ export class PerfilComponent implements OnInit {
     })
     .then(res => res.ok ? res.json() : null)
     .then(data => {
-      if (data && data.perfil) {
-        this.usuario = { ...this.usuario, ...data.perfil };
-        this.showEditModal = false;
+      this.showEditModal = false;
+      setTimeout(() => {
+        this.mostrarPerfilGuardadoModal();
+      }, 100); // Espera breve para asegurar cierre del modal de edición
+      if (data && (data.perfil || data.usuario)) {
+        this.usuario = { ...this.usuario, ...(data.perfil || data.usuario) };
       }
     });
   }
