@@ -6,6 +6,7 @@ import { MsalService } from '@azure/msal-angular';
 import { Router, NavigationEnd } from '@angular/router';
 
 interface Usuario {
+  userId?: string;
   nombre: string;
   fotoUrl?: string;
   nacionalidad: string;
@@ -567,6 +568,7 @@ export class PerfilComponent implements OnInit {
           if (data && data.usuario) {
             const u = data.usuario;
             this.usuario = {
+              userId: u.userId || '', // <-- asigna el userId correctamente
               nombre: u.nombreCompleto || u.nombre || '',
               fotoUrl: u.fotoUrl || '',
               nacionalidad: u.nacionalidad || '',
@@ -774,7 +776,11 @@ export class PerfilComponent implements OnInit {
   // Método para guardar los cambios en la educación editada
   guardarEducacionEditada() {
     const token = localStorage.getItem('token');
-    fetch('http://localhost:8081/api/educacion', {
+    // Asegura que userId esté presente en el objeto de educación
+    if (this.usuario && this.usuario.userId) {
+      this.editarEducacion.userId = this.usuario.userId;
+    }
+    fetch('http://localhost:8081/api/auth/educacion', {
       method: 'PUT',
       headers: token ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } : { 'Content-Type': 'application/json' },
       body: JSON.stringify(this.editarEducacion)
@@ -814,10 +820,19 @@ export class PerfilComponent implements OnInit {
   // Método para guardar los cambios en la experiencia editada
   guardarExperienciaEditada() {
     const token = localStorage.getItem('token');
-    fetch('http://localhost:8081/api/experiencia', {
+    let experienciaPayload = this.editarExperiencia;
+    // Asegura que userId esté presente
+    const userId = this.usuario?.userId || '';
+    if (Array.isArray(experienciaPayload)) {
+      experienciaPayload = experienciaPayload.map(exp => ({ ...exp, userId }));
+    } else {
+      experienciaPayload = { ...experienciaPayload, userId };
+    }
+    console.log('Payload enviado:', experienciaPayload); // Verifica que userId esté presente
+    fetch('http://localhost:8081/api/auth/experiencia', {
       method: 'PUT',
       headers: token ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } : { 'Content-Type': 'application/json' },
-      body: JSON.stringify(this.editarExperiencia)
+      body: JSON.stringify(experienciaPayload)
     })
     .then(res => res.ok ? res.json() : null)
     .then(data => {
