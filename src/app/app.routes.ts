@@ -11,11 +11,16 @@ export const routes: Routes = [
   { path: 'perfil', loadComponent: () => import('./pages/perfil/perfil.component').then(m => m.PerfilComponent) },
   { path: '', component: HomeComponent },           // pública
 
+  // Ruta dummy para recarga de perfil
+  { path: 'dummy', component: HomeComponent },
+
+
 
 
   // Trabajador
   { path: 'ofertas', component: OfertasListComponent },
   { path: 'ofertas/:id', loadComponent: () => import('./pages/ofertas/oferta-detail.component').then(m => m.OfertaDetailComponent) },
+  { path: 'mis-postulaciones', loadComponent: () => import('./pages/ofertas/mis-postulaciones.component').then(m => m.MisPostulacionesComponent), canActivate: [MsalGuard, RoleGuard], data: { roles: ['trabajador','admin'] } },
   { path: 'documentos', component: DocumentosUploadComponent, canActivate: [MsalGuard, RoleGuard], data: { roles: ['trabajador','admin'] } },
 
   // Empresa

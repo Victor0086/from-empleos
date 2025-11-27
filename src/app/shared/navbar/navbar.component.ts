@@ -2,6 +2,7 @@ import { LoginSuccessDialogComponent } from '../../dialogs/login-success-dialog.
 
 // Other imports...
 import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
+import { PerfilReloadService } from '../../core/services/perfil-reload.service';
 import { Router } from '@angular/router';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -27,24 +28,31 @@ export class NavbarComponent implements OnInit, OnDestroy {
   // En la clase NavbarComponent, agregar propiedad para la foto de perfil:
   fotoUrl: string = '';
 
-  verPerfil() {
-    this.router.navigate(['/perfil']);
+ 
+  constructor(
+    public auth: AuthService,
+    private authService: MsalService,
+    private msalBroadcastService: MsalBroadcastService,
+    private router: Router,
+    private authEvents: AuthEventsService,
+    private cdr: ChangeDetectorRef,
+    private perfilReload: PerfilReloadService
+  ) {
+    this.dialog = inject(MatDialog);
+    this.auth.restore();
+    // Suscribirse solo al evento global de login
+    this.authEvents.login$.subscribe(() => this.login());
   }
 
   verMiCV() {
-    this.router.navigate(['/perfil']).then(() => {
-      // Forzar recarga del perfil si el componente ya está montado
-      const perfilComp = document.querySelector('app-perfil');
-      if (perfilComp && typeof (perfilComp as any).cargarPerfil === 'function') {
-        (perfilComp as any).cargarPerfil();
-      }
-      this.showMenu = false;
-    });
+    this.router.navigate(['/perfil']);
+    setTimeout(() => {
+      this.perfilReload.triggerReload();
+    }, 100);
+    this.showMenu = false;
   }
 
-  abrirPerfil() {
-    this.router.navigate(['/perfil']);
-  }
+
 
   verMisPostulaciones() {
     this.router.navigate(['/mis-postulaciones']);
@@ -60,19 +68,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
   loadingLogin = false;
   private readonly _destroying$ = new Subject<void>();
 
-  constructor(
-    public auth: AuthService,
-    private authService: MsalService,
-    private msalBroadcastService: MsalBroadcastService,
-    private router: Router,
-    private authEvents: AuthEventsService,
-    private cdr: ChangeDetectorRef
-  ) {
-    this.dialog = inject(MatDialog);
-    this.auth.restore();
-    // Suscribirse solo al evento global de login
-    this.authEvents.login$.subscribe(() => this.login());
-  }
+  // Eliminar constructor duplicado, ya está arriba con PerfilReloadService
 
   ngOnInit(): void {
     // Asegurar que el usuario activo esté seteado tras recarga

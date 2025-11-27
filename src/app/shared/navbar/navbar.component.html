@@ -57,9 +57,9 @@
               <button class="dropdown-item d-flex align-items-center" (click)="verMiCV()">
                 <span class="material-icons me-2">badge</span> Mi CV
               </button>
-              <button class="dropdown-item d-flex align-items-center" (click)="verMisPostulaciones()">
+              <a class="dropdown-item d-flex align-items-center" [routerLink]="'/mis-postulaciones'" (click)="showMenu = false">
                 <span class="material-icons me-2">send</span> Mis postulaciones
-              </button>
+              </a>
             </div>
             <button class="btn btn-warning d-flex align-items-center ms-2" (click)="logout()">
               <span class="material-icons me-1">logout</span> Cerrar sesión

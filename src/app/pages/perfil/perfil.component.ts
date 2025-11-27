@@ -1,4 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { PerfilReloadService } from '../../core/services/perfil-reload.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
@@ -546,6 +548,8 @@ export class PerfilComponent implements OnInit {
 
   private auth = inject(AuthService);
   private msal = inject(MsalService);
+  private route = inject(ActivatedRoute);
+  private perfilReload = inject(PerfilReloadService);
 
   ngOnInit() {
     const cargarPerfil = () => {
@@ -568,7 +572,7 @@ export class PerfilComponent implements OnInit {
           if (data && data.usuario) {
             const u = data.usuario;
             this.usuario = {
-              userId: u.userId || '', // <-- asigna el userId correctamente
+              userId: u.userId || '',
               nombre: u.nombreCompleto || u.nombre || '',
               fotoUrl: u.fotoUrl || '',
               nacionalidad: u.nacionalidad || '',
@@ -584,7 +588,7 @@ export class PerfilComponent implements OnInit {
               },
               estudios: Array.isArray(u.estudios) ? u.estudios : [],
               experiencias: Array.isArray(u.experiencias) ? u.experiencias : [],
-              descripcion: u.descripcion || '',
+              descripcion: u.resumenProfesional || u.descripcion || '',
               habilidades: u.habilidades || '',
               cvAdjunto: u.cvAdjunto || ''
             };
@@ -653,6 +657,12 @@ export class PerfilComponent implements OnInit {
       }
     };
 
+    this.route.queryParams.subscribe(() => {
+      cargarPerfil();
+    });
+    this.perfilReload.reload$.subscribe(() => {
+      cargarPerfil();
+    });
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd && event.urlAfterRedirects === '/perfil') {
         cargarPerfil();
@@ -871,16 +881,38 @@ export class PerfilComponent implements OnInit {
   // Método para guardar los cambios en el perfil profesional editado
   guardarPerfilEditado() {
     const token = localStorage.getItem('token');
-    fetch('http://localhost:8081/api/perfil', {
+    const email = this.usuario?.contacto?.email || '';
+    // Asegura que el campo resumenProfesional esté presente en el body
+    const perfilPayload = {
+      ...this.editarPerfil,
+      resumenProfesional: this.editarPerfil.resumen
+    };
+    fetch(`http://localhost:8081/api/auth/perfil?email=${email}`, {
       method: 'PUT',
       headers: token ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } : { 'Content-Type': 'application/json' },
-      body: JSON.stringify(this.editarPerfil)
+      body: JSON.stringify(perfilPayload)
     })
     .then(res => res.ok ? res.json() : null)
     .then(data => {
       if (data && data.perfil) {
-        // Actualizar los datos del usuario con el perfil editado
-        this.usuario = { ...this.usuario, ...data.perfil };
+        // Solo actualiza los campos editados
+        this.usuario = {
+          ...this.usuario,
+          nombre: this.usuario?.nombre || '',
+          nacionalidad: this.usuario?.nacionalidad || '',
+          nacimiento: this.usuario?.nacimiento || '',
+          genero: this.usuario?.genero || '',
+          estadoCivil: this.usuario?.estadoCivil || '',
+          licencia: this.usuario?.licencia || '',
+          contacto: this.usuario?.contacto || { celular: '', telefono: '', email: '', direccion: '' },
+          estudios: this.usuario?.estudios || [],
+          experiencias: this.usuario?.experiencias || [],
+          descripcion: data.perfil.descripcion,
+          habilidades: data.perfil.habilidades,
+          fotoUrl: this.usuario?.fotoUrl || '',
+          cvAdjunto: this.usuario?.cvAdjunto || '',
+          userId: this.usuario?.userId || ''
+        };
         this.showEditPerfilModal = false;
       }
     });
