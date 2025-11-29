@@ -19,7 +19,6 @@ interface Oferta {
   horario: string;
   duracion: string;
 }
-
 @Component({
   standalone: true,
   selector: 'app-ofertas-list',
