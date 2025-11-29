@@ -16,6 +16,7 @@ interface Usuario {
   genero: string;
   estadoCivil: string;
   licencia: string;
+  rol: string;
   contacto: {
     celular: string;
     telefono: string;
@@ -73,6 +74,7 @@ interface Usuario {
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Perfil guardado correctamente</h5>
+            <button type="button" class="btn-close" aria-label="Close" (click)="cerrarPerfilGuardadoModal()"></button>
           </div>
           <div class="modal-body">
             <p>Los cambios en tu perfil han sido guardados.</p>
@@ -113,6 +115,13 @@ interface Usuario {
                   <div class="col-md-6 mb-3">
                     <label>Licencia de conducir</label>
                     <input type="text" class="form-control" [(ngModel)]="nuevoUsuario.licencia" name="licencia">
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label>Rol</label>
+                    <select class="form-select" [(ngModel)]="nuevoUsuario.rol" name="rol" required>
+                      <option value="trabajador">Trabajador</option>
+                      <option value="empleador">Empleador</option>
+                    </select>
                   </div>
                   <div class="col-md-6 mb-3">
                     <label>Celular</label>
@@ -240,6 +249,16 @@ interface Usuario {
               <div><span class="material-icons align-middle">flag</span> Objetivo</div>
               <div><span class="material-icons align-middle">psychology</span> Conocimientos y habilidades</div>
             </div>
+            <div class="card p-3 mt-3">
+              <div class="fw-bold mb-2">Tipo de usuario</div>
+              <div class="mb-1">
+                {{ getNombreRol(usuario.rol) }}
+              </div>
+              <!-- Botón para ver postulaciones solo si el usuario es trabajador -->
+              <div class="mt-2" *ngIf="usuario.rol === 'trabajador'">
+                <button class="btn btn-primary w-100" (click)="irAPostulaciones()">Ver mis postulaciones</button>
+              </div>
+            </div>
           </div>
         </div>
       </ng-container>
@@ -337,6 +356,13 @@ interface Usuario {
               <div class="mb-2">
                 <label>Licencia de conducir</label>
                 <input type="text" class="form-control" [(ngModel)]="editarUsuario.licencia" name="licencia">
+              </div>
+              <div class="mb-2">
+                <label>Rol</label>
+                <select class="form-control" [(ngModel)]="editarUsuario.rol" name="rol" required>
+                  <option value="trabajador">Trabajador</option>
+                  <option value="empleador">Empleador</option>
+                </select>
               </div>
               <div class="mb-2">
                 <label>Celular</label>
@@ -473,6 +499,28 @@ interface Usuario {
 
 
 export class PerfilComponent implements OnInit {
+      // Devuelve el nombre legible del rol
+      getNombreRol(rol: string | number): string {
+        if (!rol) return '';
+        // Si viene como número
+        if (typeof rol === 'number') {
+          if (rol === 1) return 'Trabajador';
+          if (rol === 2) return 'Empleador';
+          if (rol === 3) return 'Administrador';
+          if (rol === 4) return 'Notario';
+          return String(rol);
+        }
+        // Si viene como string (case-insensitive)
+        const r = rol.toLowerCase();
+        if (r === 'trabajador') return 'Trabajador';
+        if (r === 'empleador') return 'Empleador';
+        if (r === 'admin' || r === 'administrador') return 'Administrador';
+        if (r === 'notario') return 'Notario';
+        return rol;
+      }
+    cerrarPerfilGuardadoModal() {
+      this.showPerfilGuardadoModal = false;
+    }
   constructor(private router: Router) {}
     showGuardadoModal = false;
     showPerfilGuardadoModal = false;
@@ -504,6 +552,7 @@ export class PerfilComponent implements OnInit {
     genero: '',
     estadoCivil: '',
     licencia: '',
+    rol: '',
     contacto: {
       celular: '',
       telefono: '',
@@ -511,6 +560,9 @@ export class PerfilComponent implements OnInit {
       direccion: ''
     },
     estudios: [],
+    experiencias: [],
+    descripcion: '',
+    habilidades: '',
     cvAdjunto: ''
   };
   nuevoCV: any = {
@@ -530,6 +582,11 @@ export class PerfilComponent implements OnInit {
   // 1. Agregar estado para mostrar el modal y datos editables
   showEditModal = false;
   editarUsuario: Usuario | null = null;
+  // Si se inicializa editarUsuario, agregar rol vacío
+  // editarUsuario: Usuario = {
+  //   ...otrosCampos,
+  //   rol: '',
+  // };
 
   // Modal para editar Educación
   showEditEducacionModal = false;
@@ -545,6 +602,23 @@ export class PerfilComponent implements OnInit {
 
   // Estado para la pestaña activa
   activeTab: 'educacion' | 'experiencia' | 'perfil' = 'educacion';
+
+  // Navegación a la página de postulaciones
+  irAPostulaciones() {
+    // Si tienes lógica para cargar postulaciones aquí, haz la petición sin email y con el token
+    // Si solo navegas, la lógica debe estar en el componente de mis-postulaciones
+    this.router.navigate(['/mis-postulaciones']);
+    // Ejemplo de cómo hacer la petición correctamente:
+    // const token = localStorage.getItem('token');
+    // fetch('http://localhost:8081/api/postulaciones', {
+    //   method: 'GET',
+    //   headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+    // })
+    // .then(res => res.ok ? res.json() : null)
+    // .then(data => {
+    //   // Procesa el array de postulaciones aquí
+    // });
+  }
 
   private auth = inject(AuthService);
   private msal = inject(MsalService);
@@ -573,40 +647,49 @@ export class PerfilComponent implements OnInit {
             const u = data.usuario;
             this.usuario = {
               userId: u.userId || '',
-              nombre: u.nombreCompleto || u.nombre || '',
-              fotoUrl: u.fotoUrl || '',
-              nacionalidad: u.nacionalidad || '',
-              nacimiento: u.nacimiento || '',
-              genero: u.genero || '',
-              estadoCivil: u.estadoCivil || '',
-              licencia: u.licencia || '',
+              nombre: typeof u.nombreCompleto === 'string' ? u.nombreCompleto : (typeof u.nombre === 'string' ? u.nombre : ''),
+              fotoUrl: typeof u.fotoUrl === 'string' ? u.fotoUrl : '',
+              nacionalidad: typeof u.nacionalidad === 'string' ? u.nacionalidad : '',
+              nacimiento: typeof u.nacimiento === 'string' ? u.nacimiento : '',
+              genero: typeof u.genero === 'string' ? u.genero : '',
+              estadoCivil: typeof u.estadoCivil === 'string' ? u.estadoCivil : '',
+              licencia: typeof u.licencia === 'string' ? u.licencia : '',
+              rol: typeof u.rol === 'string' ? u.rol : '',
               contacto: {
-                celular: u.contacto?.celular || '',
-                telefono: u.contacto?.telefono || '',
-                email: u.contacto?.email || email,
-                direccion: u.contacto?.direccion || '',
+                celular: typeof u.contacto?.celular === 'string' ? u.contacto.celular : '',
+                telefono: typeof u.contacto?.telefono === 'string' ? u.contacto.telefono : '',
+                email: typeof u.contacto?.email === 'string' ? u.contacto.email : email,
+                direccion: typeof u.contacto?.direccion === 'string' ? u.contacto.direccion : ''
               },
               estudios: Array.isArray(u.estudios) ? u.estudios : [],
               experiencias: Array.isArray(u.experiencias) ? u.experiencias : [],
-              descripcion: u.resumenProfesional || u.descripcion || '',
-              habilidades: u.habilidades || '',
-              cvAdjunto: u.cvAdjunto || ''
+              descripcion: typeof u.resumenProfesional === 'string' ? u.resumenProfesional : (typeof u.descripcion === 'string' ? u.descripcion : ''),
+              habilidades: typeof u.habilidades === 'string' ? u.habilidades : '',
+              cvAdjunto: typeof u.cvAdjunto === 'string' ? u.cvAdjunto : ''
             };
+            // Guardar usuario y rol en localStorage
+            try {
+              localStorage.setItem('usuario', JSON.stringify(this.usuario));
+              if (this.usuario.rol) {
+                localStorage.setItem('rol', this.usuario.rol);
+              }
+            } catch {}
           } else {
             const claims = account.idTokenClaims ?? {};
             this.usuario = {
-              nombre: String(claims['given_name'] || claims['displayName'] || ''),
+              nombre: (typeof claims['given_name'] === 'string' && claims['given_name']) || (typeof claims['displayName'] === 'string' && claims['displayName']) || '',
               fotoUrl: '',
-              nacionalidad: String(claims['country'] || claims['country_region'] || ''),
-              nacimiento: String(claims['birthdate'] || ''),
-              genero: String(claims['gender'] || ''),
-              estadoCivil: String(claims['maritalStatus'] || ''),
+              nacionalidad: (typeof claims['country'] === 'string' && claims['country']) || (typeof claims['country_region'] === 'string' && claims['country_region']) || '',
+              nacimiento: String(claims['birthdate']) || '',
+              genero: String(claims['gender']) || '',
+              estadoCivil: String(claims['maritalStatus']) || '',
               licencia: '',
+              rol: '',
               contacto: {
-                celular: String(claims['phone_number'] || ''),
-                telefono: String(claims['telephone'] || ''),
+                celular: String(claims['phone_number']) || '',
+                telefono: String(claims['telephone']) || '',
                 email: email,
-                direccion: String(claims['city'] || claims['address'] || ''),
+                direccion: (typeof claims['city'] === 'string' && claims['city']) || (typeof claims['address'] === 'string' && claims['address']) || ''
               },
               estudios: [],
               experiencias: [],
@@ -616,27 +699,27 @@ export class PerfilComponent implements OnInit {
             };
             const usuarioSync = {
               userId: '',
-              email: this.usuario.contacto.email,
-              nombreCompleto: this.usuario.nombre,
-              rol: 'trabajador',
+              email: this.usuario?.contacto?.email || '',
+              nombreCompleto: this.usuario?.nombre || '',
+              rol: this.usuario?.rol || 'trabajador',
               fechaCreacion: new Date(),
-              fotoUrl: this.usuario.fotoUrl || '',
-              nacionalidad: this.usuario.nacionalidad || '',
-              nacimiento: this.usuario.nacimiento || '',
-              genero: this.usuario.genero || '',
-              estadoCivil: this.usuario.estadoCivil || '',
-              licencia: this.usuario.licencia || '',
+              fotoUrl: this.usuario?.fotoUrl || '',
+              nacionalidad: this.usuario?.nacionalidad || '',
+              nacimiento: this.usuario?.nacimiento || '',
+              genero: this.usuario?.genero || '',
+              estadoCivil: this.usuario?.estadoCivil || '',
+              licencia: this.usuario?.licencia || '',
               contacto: {
-                email: this.usuario.contacto.email,
-                celular: this.usuario.contacto.celular,
-                telefono: this.usuario.contacto.telefono,
-                direccion: this.usuario.contacto.direccion
+                email: this.usuario?.contacto?.email || '',
+                celular: this.usuario?.contacto?.celular || '',
+                telefono: this.usuario?.contacto?.telefono || '',
+                direccion: this.usuario?.contacto?.direccion || ''
               },
               estudios: [],
               experiencias: [],
-              descripcion: this.usuario.descripcion || '',
-              habilidades: this.usuario.habilidades || '',
-              cvAdjunto: this.usuario.cvAdjunto || ''
+              descripcion: this.usuario?.descripcion || '',
+              habilidades: this.usuario?.habilidades || '',
+              cvAdjunto: this.usuario?.cvAdjunto || ''
             };
             console.log('Enviando usuario al backend:', usuarioSync);
             this.auth.syncFullUserWithBackend(usuarioSync).then(obs => {
@@ -767,7 +850,62 @@ export class PerfilComponent implements OnInit {
         this.mostrarPerfilGuardadoModal();
       }, 100); // Espera breve para asegurar cierre del modal de edición
       if (data && (data.perfil || data.usuario)) {
-        this.usuario = { ...this.usuario, ...(data.perfil || data.usuario) };
+        // Conversión de rol_id a nombre de rol
+        let rolBD = '';
+        const rolId = data.perfil?.rol_id || data.usuario?.rol_id;
+        if (rolId === 1) rolBD = 'trabajador';
+        else if (rolId === 2) rolBD = 'empleador';
+        else if (rolId === 3) rolBD = 'admin';
+        else if (rolId === 4) rolBD = 'notario';
+        else rolBD = (data.perfil?.rol || data.usuario?.rol || this.usuario?.rol || '');
+
+        this.usuario = {
+          ...this.usuario,
+          ...(data.perfil || data.usuario),
+          rol: rolBD,
+          nombre: typeof (data.perfil?.nombre || data.usuario?.nombre || this.usuario?.nombre) === 'string' ? (data.perfil?.nombre || data.usuario?.nombre || this.usuario?.nombre) : '',
+          nacionalidad: typeof (data.perfil?.nacionalidad || data.usuario?.nacionalidad || this.usuario?.nacionalidad) === 'string' ? (data.perfil?.nacionalidad || data.usuario?.nacionalidad || this.usuario?.nacionalidad) : '',
+          nacimiento: typeof (data.perfil?.nacimiento || data.usuario?.nacimiento || this.usuario?.nacimiento) === 'string' ? (data.perfil?.nacimiento || data.usuario?.nacimiento || this.usuario?.nacimiento) : '',
+          genero: typeof (data.perfil?.genero || data.usuario?.genero || this.usuario?.genero) === 'string' ? (data.perfil?.genero || data.usuario?.genero || this.usuario?.genero) : '',
+          estadoCivil: typeof (data.perfil?.estadoCivil || data.usuario?.estadoCivil || this.usuario?.estadoCivil) === 'string' ? (data.perfil?.estadoCivil || data.usuario?.estadoCivil || this.usuario?.estadoCivil) : '',
+          licencia: typeof (data.perfil?.licencia || data.usuario?.licencia || this.usuario?.licencia) === 'string' ? (data.perfil?.licencia || data.usuario?.licencia || this.usuario?.licencia) : '',
+          fotoUrl: typeof (data.perfil?.fotoUrl || data.usuario?.fotoUrl || this.usuario?.fotoUrl) === 'string' ? (data.perfil?.fotoUrl || data.usuario?.fotoUrl || this.usuario?.fotoUrl) : '',
+          descripcion: typeof (data.perfil?.descripcion || data.usuario?.descripcion || this.usuario?.descripcion) === 'string' ? (data.perfil?.descripcion || data.usuario?.descripcion || this.usuario?.descripcion) : '',
+          habilidades: typeof (data.perfil?.habilidades || data.usuario?.habilidades || this.usuario?.habilidades) === 'string' ? (data.perfil?.habilidades || data.usuario?.habilidades || this.usuario?.habilidades) : '',
+          cvAdjunto: typeof (data.perfil?.cvAdjunto || data.usuario?.cvAdjunto || this.usuario?.cvAdjunto) === 'string' ? (data.perfil?.cvAdjunto || data.usuario?.cvAdjunto || this.usuario?.cvAdjunto) : '',
+          contacto: {
+            celular: typeof (data.perfil?.contacto?.celular || data.usuario?.contacto?.celular || this.usuario?.contacto?.celular) === 'string' ? (data.perfil?.contacto?.celular || data.usuario?.contacto?.celular || this.usuario?.contacto?.celular) : '',
+            telefono: typeof (data.perfil?.contacto?.telefono || data.usuario?.contacto?.telefono || this.usuario?.contacto?.telefono) === 'string' ? (data.perfil?.contacto?.telefono || data.usuario?.contacto?.telefono || this.usuario?.contacto?.telefono) : '',
+            email: typeof (data.perfil?.contacto?.email || data.usuario?.contacto?.email || this.usuario?.contacto?.email) === 'string' ? (data.perfil?.contacto?.email || data.usuario?.contacto?.email || this.usuario?.contacto?.email) : '',
+            direccion: typeof (data.perfil?.contacto?.direccion || data.usuario?.contacto?.direccion || this.usuario?.contacto?.direccion) === 'string' ? (data.perfil?.contacto?.direccion || data.usuario?.contacto?.direccion || this.usuario?.contacto?.direccion) : ''
+          },
+          estudios: Array.isArray(data.perfil?.estudios) ? data.perfil.estudios : (Array.isArray(data.usuario?.estudios) ? data.usuario.estudios : (this.usuario?.estudios || [])),
+          experiencias: Array.isArray(data.perfil?.experiencias) ? data.perfil.experiencias : (Array.isArray(data.usuario?.experiencias) ? data.usuario.experiencias : (this.usuario?.experiencias || [])),
+          userId: typeof (data.perfil?.userId || data.usuario?.userId || this.usuario?.userId) === 'string' ? (data.perfil?.userId || data.usuario?.userId || this.usuario?.userId) : ''
+        };
+        this.editarUsuario = {
+          ...this.usuario,
+          nombre: typeof this.usuario?.nombre === 'string' ? this.usuario.nombre : '',
+          nacionalidad: typeof this.usuario?.nacionalidad === 'string' ? this.usuario.nacionalidad : '',
+          nacimiento: typeof this.usuario?.nacimiento === 'string' ? this.usuario.nacimiento : '',
+          genero: typeof this.usuario?.genero === 'string' ? this.usuario.genero : '',
+          estadoCivil: typeof this.usuario?.estadoCivil === 'string' ? this.usuario.estadoCivil : '',
+          licencia: typeof this.usuario?.licencia === 'string' ? this.usuario.licencia : '',
+          rol: typeof this.usuario?.rol === 'string' ? this.usuario.rol : '',
+          fotoUrl: typeof this.usuario?.fotoUrl === 'string' ? this.usuario.fotoUrl : '',
+          descripcion: typeof this.usuario?.descripcion === 'string' ? this.usuario.descripcion : '',
+          habilidades: typeof this.usuario?.habilidades === 'string' ? this.usuario.habilidades : '',
+          cvAdjunto: typeof this.usuario?.cvAdjunto === 'string' ? this.usuario.cvAdjunto : '',
+          contacto: {
+            celular: typeof this.usuario?.contacto?.celular === 'string' ? this.usuario.contacto.celular : '',
+            telefono: typeof this.usuario?.contacto?.telefono === 'string' ? this.usuario.contacto.telefono : '',
+            email: typeof this.usuario?.contacto?.email === 'string' ? this.usuario.contacto.email : '',
+            direccion: typeof this.usuario?.contacto?.direccion === 'string' ? this.usuario.contacto.direccion : ''
+          },
+          estudios: Array.isArray(this.usuario?.estudios) ? this.usuario.estudios : [],
+          experiencias: Array.isArray(this.usuario?.experiencias) ? this.usuario.experiencias : [],
+          userId: typeof this.usuario?.userId === 'string' ? this.usuario.userId : ''
+        };
       }
     });
   }
@@ -800,7 +938,7 @@ export class PerfilComponent implements OnInit {
       if (data && data.educacion) {
         // Actualizar la lista de estudios del usuario
         if (!this.usuario) {
-          this.usuario = { nombre: '', nacionalidad: '', nacimiento: '', genero: '', estadoCivil: '', licencia: '', contacto: { celular: '', telefono: '', email: '', direccion: '' }, estudios: [], experiencias: [] };
+          this.usuario = { nombre: '', nacionalidad: '', nacimiento: '', genero: '', estadoCivil: '', licencia: '', rol: '', contacto: { celular: '', telefono: '', email: '', direccion: '' }, estudios: [], experiencias: [], descripcion: '', habilidades: '', cvAdjunto: '' };
         }
         if (!this.usuario.estudios) {
           this.usuario.estudios = [];
@@ -848,7 +986,7 @@ export class PerfilComponent implements OnInit {
     .then(data => {
       if (data && data.experiencia) {
         if (!this.usuario) {
-          this.usuario = { nombre: '', nacionalidad: '', nacimiento: '', genero: '', estadoCivil: '', licencia: '', contacto: { celular: '', telefono: '', email: '', direccion: '' }, estudios: [], experiencias: [] };
+          this.usuario = { nombre: '', nacionalidad: '', nacimiento: '', genero: '', estadoCivil: '', licencia: '', rol: '', contacto: { celular: '', telefono: '', email: '', direccion: '' }, estudios: [], experiencias: [], descripcion: '', habilidades: '', cvAdjunto: '' };
         }
         if (!this.usuario.experiencias) {
           this.usuario.experiencias = [];
@@ -904,6 +1042,7 @@ export class PerfilComponent implements OnInit {
           genero: this.usuario?.genero || '',
           estadoCivil: this.usuario?.estadoCivil || '',
           licencia: this.usuario?.licencia || '',
+          rol: typeof this.usuario?.rol === 'string' ? this.usuario.rol : '',
           contacto: this.usuario?.contacto || { celular: '', telefono: '', email: '', direccion: '' },
           estudios: this.usuario?.estudios || [],
           experiencias: this.usuario?.experiencias || [],

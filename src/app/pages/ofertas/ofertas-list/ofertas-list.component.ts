@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { AuthService } from '../../../core/services/auth.service';
 import { PostulacionDialogComponent } from '../postulacion-dialog.component';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTableModule } from '@angular/material/table';
@@ -355,15 +356,15 @@ export class OfertasListComponent {
     return 'badge bg-secondary text-white';
   }
 
+  private authService: AuthService = inject(AuthService);
+
   abrirPostulacionModal() {
-    // Validar si el usuario está autenticado
-    const isLogged = localStorage.getItem('auth') !== null;
+    // Usar el signal correctamente como función y tipado
+    const isLogged: boolean = typeof this.authService.isLogged === 'function' ? this.authService.isLogged() : !!this.authService.isLogged;
     if (isLogged) {
-      // Redirigir a la página de postulación (ajusta la ruta si es necesario)
       window.location.href = '/postulacion';
       return;
     }
-    // Si no está autenticado, mostrar el modal
     this.dialog.open(PostulacionDialogComponent, {
       width: '350px',
       autoFocus: false,

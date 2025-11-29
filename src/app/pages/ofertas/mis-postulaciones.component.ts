@@ -1,4 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
+import { Router, NavigationEnd } from '@angular/router';
 import { DatePipe, CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { MsalService } from '@azure/msal-angular';
@@ -24,28 +25,38 @@ import { MsalService } from '@azure/msal-angular';
   `
 })
 export class MisPostulacionesComponent implements OnInit {
+    private router = inject(Router);
   loading = true;
   postulaciones: any[] = [];
   private auth = inject(AuthService);
   private msal = inject(MsalService);
 
   ngOnInit() {
-    // Obtener email del usuario autenticado desde el token MSAL
-    const account = this.msal.instance.getActiveAccount() || this.msal.instance.getAllAccounts()[0];
-    let email = '';
-    if (account && account.idTokenClaims) {
-      email = String(
-        account.idTokenClaims['email'] ||
-        account.idTokenClaims['emails']?.[0] ||
-        account.idTokenClaims['preferred_username'] ||
-        account.username || ''
-      );
-    }
-    if (!email) {
+    // Recarga postulaciones al entrar a la ruta
+    this.router.events.subscribe(event => {
+      if (event instanceof NavigationEnd && event.urlAfterRedirects === '/mis-postulaciones') {
+        this.cargarPostulaciones();
+      }
+    });
+    // Carga inicial
+    this.cargarPostulaciones();
+  }
+
+  cargarPostulaciones() {
+    this.loading = true;
+    const token = localStorage.getItem('token');
+    if (!token) {
       this.loading = false;
+      this.postulaciones = [];
       return;
     }
-    fetch(`http://localhost:8081/api/postulaciones?email=${encodeURIComponent(email)}`)
+    fetch('http://localhost:8081/api/postulaciones', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
       .then(res => res.ok ? res.json() : [])
       .then(data => {
         this.postulaciones = Array.isArray(data) ? data : [];
@@ -53,6 +64,8 @@ export class MisPostulacionesComponent implements OnInit {
       })
       .catch(() => {
         this.loading = false;
+        this.postulaciones = [];
       });
   }
-}
+  }
+
