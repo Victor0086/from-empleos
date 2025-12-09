@@ -21,12 +21,16 @@ export const routes: Routes = [
   // Empresa (debe ir ANTES de las rutas más generales)
   { path: 'ofertas/nueva', component: OfertaFormComponent, canActivate: [MsalGuard, RoleGuard], data: { roles: ['empleador', 'admin'] } },
 
+
+  // Empresa (debe ir ANTES de las rutas más generales)
+  { path: 'ofertas/nueva', component: OfertaFormComponent, canActivate: [MsalGuard, RoleGuard], data: { roles: ['empleador','admin'] } },
+
   // Trabajador
   { path: 'ofertas', component: OfertasListComponent },
   { path: 'ofertas/:id', loadComponent: () => import('./pages/ofertas/oferta-detail.component').then(m => m.OfertaDetailComponent) },
   { path: 'postulacion', loadComponent: () => import('./pages/postulacion/postulacion.component').then(m => m.PostulacionComponent), canActivate: [MsalGuard] },
   { path: 'mis-postulaciones', loadComponent: () => import('./pages/ofertas/mis-postulaciones.component').then(m => m.MisPostulacionesComponent), canActivate: [MsalGuard] },
-  { path: 'documentos', component: DocumentosUploadComponent, canActivate: [MsalGuard, RoleGuard], data: { roles: ['trabajador', 'admin'] } },
+  { path: 'documentos', component: DocumentosUploadComponent, canActivate: [MsalGuard, RoleGuard], data: { roles: ['trabajador','admin'] } },
 
   { path: '**', redirectTo: '' }
 ];
