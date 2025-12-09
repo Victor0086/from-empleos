@@ -55,76 +55,7 @@ export class OfertaDetailComponent {
   ordenActual: 'relevantes' | 'recientes' = 'relevantes';
   ofertasOrdenadas: Oferta[] = [...this.data];
 
-  constructor() {
-    this.cargarOfertas();
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    this.oferta = this.ofertas.find(o => o.id === id);
-  }
-
-  cargarOfertas() {
-    this.loading = true;
-    this.http.get<any[]>(`${this.apiUrl}/ofertas`).subscribe({
-      next: (ofertas) => {
-        console.log('Ofertas cargadas para trabajadores:', ofertas);
-        // Filtrar solo ofertas ABIERTAS para trabajadores
-        const ofertasAbiertas = ofertas.filter(oferta => oferta.estado === 'ABIERTA');
-        // Mapear ofertas del backend al formato del frontend
-        this.data = ofertasAbiertas.map(oferta => ({
-          id: oferta.oferta_id,
-          titulo: oferta.titulo,
-          area: 'General',
-          tipo: oferta.contrato_type,
-          comuna: oferta.location,
-          estado: oferta.estado,
-          fecha: this.calcularFecha(oferta.fecha_creacion),
-          sueldo: 0,
-          descripcion: oferta.descripcion,
-          horario: 'Por definir',
-          duracion: 'Por definir'
-        }));
-        // ACTUALIZAR LA VARIABLE ofertas PARA QUE EL HTML LA USE
-        this.ofertas = [...this.data];
-        console.log('Ofertas disponibles para trabajadores:', this.data);
-        this.ordenarPor(this.ordenActual);
-        this.loading = false;
-        this.cdr.detectChanges();
-        this.cdr.detectChanges();
-      },
-      error: (error) => {
-        console.error('Error al cargar ofertas:', error);
-        this.ordenarPor(this.ordenActual);
-        this.loading = false;
-        this.cdr.detectChanges();
-      }
-    });
-  }
-
-  calcularFecha(fechaCreacion: string | undefined): 'hoy' | 'ayer' | 'antiguo' {
-    if (!fechaCreacion) return 'hoy';
-
-    const hoy = new Date();
-    const fecha = new Date(fechaCreacion);
-    const diffTime = Math.abs(hoy.getTime() - fecha.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return 'hoy';
-    if (diffDays === 1) return 'ayer';
-    return 'antiguo';
-  }
-
-  ordenarPor(tipo: 'relevantes' | 'recientes') {
-    this.ordenActual = tipo;
-    if (tipo === 'relevantes') {
-      // Simula relevancia: primero las abiertas
-      this.ofertasOrdenadas = [...this.data].sort((a, b) => a.estado === 'ABIERTA' ? -1 : 1);
-    } else {
-      // Simula recientes: primero las de hoy, luego ayer, luego antiguas
-      this.ofertasOrdenadas = [...this.data].sort((a, b) => {
-        const ordenFecha = { 'hoy': 0, 'ayer': 1, 'antiguo': 2 };
-        return ordenFecha[a.fecha] - ordenFecha[b.fecha];
-      });
-    }
-  }
+ 
 }
 
 

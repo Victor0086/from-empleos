@@ -249,7 +249,7 @@ export class MisPostulacionesComponent implements OnInit {
     try {
       console.log('📡 Haciendo petición al backend...');
       
-      const response = await fetch('http://localhost:8081/api/postulaciones', {
+      const response = await fetch('http://localhost:8081/api/postulaciones?email', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

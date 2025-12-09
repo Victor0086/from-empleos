@@ -32,7 +32,6 @@ export const RoleGuard = (route: ActivatedRouteSnapshot) => {
   let userRoles = new Set<string>([...rolesFromAad, roleFromB2C].filter(Boolean).map(normalizeRol));
 
   // Como respaldo temporal, si no hay roles en el token, lee de localStorage
-  // NOTA: Esto es temporal hasta que se implemente la renovación de tokens
   let rolLocal = '';
   if (userRoles.size === 0) {
     try {

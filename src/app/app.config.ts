@@ -62,12 +62,8 @@ export function MSALGuardConfigFactory(): MsalGuardConfiguration {
 
 export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
   const protectedResourceMap = new Map<string, Array<string>>();
-  
-  // Asigna los scopes requeridos a la URL de la API
-  //protectedResourceMap.set(environment.apiConfig.url, environment.apiConfig.scopes);
-
+  // Asigna los scopes requeridos a la ruta general de la API
   protectedResourceMap.set('/api/', environment.apiConfig.scopes);
-
   return {
     interactionType: InteractionType.Redirect,
     protectedResourceMap
@@ -83,14 +79,12 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     importProvidersFrom(BrowserModule),
     importProvidersFrom(BrowserAnimationsModule),
-    
     provideHttpClient(withFetch(), withInterceptorsFromDi()),
     {
       provide: HTTP_INTERCEPTORS,
       useClass: MsalInterceptor,
       multi: true
     },
-
     importProvidersFrom(MsalModule),
     {
       provide: MSAL_INSTANCE,
@@ -104,7 +98,6 @@ export const appConfig: ApplicationConfig = {
       provide: MSAL_INTERCEPTOR_CONFIG,
       useFactory: MSALInterceptorConfigFactory
     },
-    
     MsalService,
     MsalGuard,
     MsalBroadcastService,
