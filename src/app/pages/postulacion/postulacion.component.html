@@ -1,0 +1,185 @@
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+      <mat-card class="postulacion-card">
+        <mat-card-header>
+          <div class="d-flex justify-content-between align-items-center w-100">
+            <mat-card-title>Postular a la Oferta</mat-card-title>
+            <button mat-icon-button (click)="volver()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </mat-card-header>
+        
+        <mat-card-content>
+          <div class="oferta-info mb-4 p-3" style="background-color: #f8f9fa; border-radius: 8px;">
+            <h6 class="fw-bold text-primary">Operario de Carga</h6>
+            <p class="mb-1"><strong>Empresa:</strong> Logística • Temporal</p>
+            <p class="mb-1"><strong>Ubicación:</strong> Renca</p>
+            <p class="mb-0"><strong>Modalidad:</strong> Presencial</p>
+          </div>
+
+          <form [formGroup]="postulacionForm" (ngSubmit)="onSubmit()">
+            <!-- Datos Personales -->
+            <h6 class="mb-3 text-secondary">Datos Personales</h6>
+            
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Nombres</mat-label>
+                  <input matInput formControlName="nombres" placeholder="Ingresa tus nombres">
+                  <mat-error *ngIf="postulacionForm.get('nombres')?.hasError('required')">
+                    Los nombres son requeridos
+                  </mat-error>
+                </mat-form-field>
+              </div>
+              <div class="col-md-6">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Apellidos</mat-label>
+                  <input matInput formControlName="apellidos" placeholder="Ingresa tus apellidos">
+                  <mat-error *ngIf="postulacionForm.get('apellidos')?.hasError('required')">
+                    Los apellidos son requeridos
+                  </mat-error>
+                </mat-form-field>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>RUT</mat-label>
+                  <input matInput formControlName="rut" placeholder="12.345.678-9">
+                  <mat-error *ngIf="postulacionForm.get('rut')?.hasError('required')">
+                    El RUT es requerido
+                  </mat-error>
+                </mat-form-field>
+              </div>
+              <div class="col-md-6">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Teléfono</mat-label>
+                  <input matInput formControlName="telefono" placeholder="+56 9 1234 5678">
+                  <mat-error *ngIf="postulacionForm.get('telefono')?.hasError('required')">
+                    El teléfono es requerido
+                  </mat-error>
+                </mat-form-field>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Email</mat-label>
+                <input matInput type="email" formControlName="email" placeholder="tu@email.com">
+                <mat-error *ngIf="postulacionForm.get('email')?.hasError('required')">
+                  El email es requerido
+                </mat-error>
+                <mat-error *ngIf="postulacionForm.get('email')?.hasError('email')">
+                  Ingresa un email válido
+                </mat-error>
+              </mat-form-field>
+            </div>
+
+            <!-- Experiencia -->
+            <h6 class="mb-3 text-secondary">Experiencia Laboral</h6>
+            
+            <div class="mb-3">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Años de experiencia</mat-label>
+                <mat-select formControlName="experiencia">
+                  <mat-option value="sin-experiencia">Sin experiencia</mat-option>
+                  <mat-option value="menos-1">Menos de 1 año</mat-option>
+                  <mat-option value="1-3">1 a 3 años</mat-option>
+                  <mat-option value="3-5">3 a 5 años</mat-option>
+                  <mat-option value="mas-5">Más de 5 años</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div class="mb-3">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>Describe tu experiencia relevante</mat-label>
+                <textarea matInput 
+                         formControlName="descripcionExperiencia" 
+                         rows="4" 
+                         placeholder="Describe brevemente tu experiencia laboral relacionada con este puesto...">
+                </textarea>
+              </mat-form-field>
+            </div>
+
+            <!-- Curriculum -->
+            <h6 class="mb-3 text-secondary">Currículum Vitae</h6>
+            
+            <div class="mb-3">
+              <div class="upload-area p-4 text-center" 
+                   style="border: 2px dashed #ccc; border-radius: 8px; background-color: #fafafa;"
+                   (dragover)="onDragOver($event)" 
+                   (dragleave)="onDragLeave($event)" 
+                   (drop)="onDrop($event)">
+                <mat-icon class="mb-2" style="font-size: 48px; color: #999;">cloud_upload</mat-icon>
+                <p class="mb-2">Arrastra tu CV aquí o haz clic para seleccionar</p>
+                <input type="file" 
+                       #fileInput 
+                       (change)="onFileSelected($event)" 
+                       accept=".pdf,.doc,.docx" 
+                       style="display: none;">
+                <button type="button" mat-stroked-button (click)="fileInput.click()">
+                  Seleccionar Archivo
+                </button>
+                <p class="small text-muted mt-2">Formatos permitidos: PDF, DOC, DOCX (Máx. 5MB)</p>
+              </div>
+              
+              <div *ngIf="archivoSeleccionado" class="mt-2 p-2" style="background-color: #e8f5e8; border-radius: 4px;">
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="text-success">
+                    <mat-icon class="me-1">description</mat-icon>
+                    {{ archivoSeleccionado.name }}
+                  </span>
+                  <button type="button" mat-icon-button (click)="eliminarArchivo()">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Motivación -->
+            <h6 class="mb-3 text-secondary">Motivación</h6>
+            
+            <div class="mb-3">
+              <mat-form-field appearance="outline" class="w-100">
+                <mat-label>¿Por qué te interesa este puesto?</mat-label>
+                <textarea matInput 
+                         formControlName="motivacion" 
+                         rows="3" 
+                         placeholder="Cuéntanos por qué te gustaría trabajar en esta posición...">
+                </textarea>
+              </mat-form-field>
+            </div>
+
+            <!-- Términos y condiciones -->
+            <div class="mb-4">
+              <mat-checkbox formControlName="aceptaTerminos">
+                Acepto los <a href="#" target="_blank">términos y condiciones</a> y autorizo el tratamiento de mis datos personales
+              </mat-checkbox>
+              <mat-error *ngIf="postulacionForm.get('aceptaTerminos')?.hasError('required') && postulacionForm.get('aceptaTerminos')?.touched">
+                Debes aceptar los términos y condiciones
+              </mat-error>
+            </div>
+
+            <!-- Botones -->
+            <div class="d-flex gap-2 justify-content-end">
+              <button type="button" mat-stroked-button (click)="volver()">
+                Cancelar
+              </button>
+              <button type="submit" 
+                      mat-raised-button 
+                      color="primary" 
+                      [disabled]="postulacionForm.invalid || enviando">
+                <mat-icon *ngIf="enviando" class="me-1">hourglass_empty</mat-icon>
+                {{ enviando ? 'Enviando...' : 'Enviar Postulación' }}
+              </button>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>

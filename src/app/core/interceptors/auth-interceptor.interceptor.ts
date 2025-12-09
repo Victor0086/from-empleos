@@ -3,6 +3,10 @@ import { HttpInterceptorFn, HttpRequest, HttpHandlerFn } from '@angular/common/h
 
 // Interceptor funcional
 export const authInterceptorProvider: HttpInterceptorFn = (req, next) => {
+  // No agregar token si es GET a /api/ofertas
+  if (req.method === 'GET' && req.url.includes('/api/ofertas')) {
+    return next(req);
+  }
   const token = localStorage.getItem('jwt');
   console.log('Token enviado en el header Authorization:', token);
   if (!token) {

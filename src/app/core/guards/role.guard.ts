@@ -31,10 +31,9 @@ export const RoleGuard = (route: ActivatedRouteSnapshot) => {
   };
   let userRoles = new Set<string>([...rolesFromAad, roleFromB2C].filter(Boolean).map(normalizeRol));
 
-  // Si no hay roles en el token, intenta leer el rol desde localStorage
+  // Como respaldo temporal, si no hay roles en el token, lee de localStorage
+  let rolLocal = '';
   if (userRoles.size === 0) {
-    // Busca en localStorage el objeto 'usuario' o la clave 'rol'
-    let rolLocal = '';
     try {
       const usuarioStr = localStorage.getItem('usuario');
       if (usuarioStr) {
@@ -56,6 +55,7 @@ export const RoleGuard = (route: ActivatedRouteSnapshot) => {
 
   // ¿tiene alguno de los permitidos?
   const ok = allowed.some(r => userRoles.has(r));
+  
   if (!ok) { router.navigateByUrl('/'); }
   return ok;
 };

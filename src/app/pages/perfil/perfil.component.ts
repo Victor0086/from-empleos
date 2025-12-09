@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { PerfilReloadService } from '../../core/services/perfil-reload.service';
 import { CommonModule } from '@angular/common';
@@ -58,15 +58,27 @@ interface Usuario {
     <div *ngIf="showGuardadoModal" class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.3);">
       <div class="modal-dialog">
         <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Inicio de sesión exitoso</h5>
-          </div>
-          <div class="modal-body">
-            <p>¡Bienvenido! Has iniciado sesión correctamente.</p>
-          </div>
         </div>
       </div>
     </div>
+
+    <!-- Spinner de carga global para el perfil -->
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status" style="width: 4rem; height: 4rem;">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p class="mt-3 text-muted">Cargando tu perfil...</p>
+    </div>
+
+    <!-- Contenido principal solo si no está cargando -->
+    <div *ngIf="!loading">
+    <div class="modal-header">
+      <h5 class="modal-title">Inicio de sesión exitoso</h5>
+    </div>
+    <div class="modal-body">
+      <p>¡Bienvenido! Has iniciado sesión correctamente.</p>
+    </div>
+
 
     <!-- Modal de confirmación de guardado de perfil -->
     <div *ngIf="showPerfilGuardadoModal" class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.3);">
@@ -84,68 +96,7 @@ interface Usuario {
     </div>
   <div class="container py-4">
     <ng-container *ngIf="usuario">
-      <ng-container *ngIf="!usuario.nombre">
-        <!-- Formulario para usuario nuevo -->
-        <div class="row justify-content-center">
-          <div class="col-md-8">
-            <div class="card p-4">
-              <h4>Completa tu perfil</h4>
-              <form (ngSubmit)="guardarCurriculum()" #perfilForm="ngForm">
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label>Nombre completo</label>
-                    <input type="text" class="form-control" [(ngModel)]="nuevoUsuario.nombre" name="nombre" required>
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label>Nacionalidad</label>
-                    <input type="text" class="form-control" [(ngModel)]="nuevoUsuario.nacionalidad" name="nacionalidad">
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label>Fecha de nacimiento</label>
-                    <input type="date" class="form-control" [(ngModel)]="nuevoUsuario.nacimiento" name="nacimiento">
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label>Género</label>
-                    <input type="text" class="form-control" [(ngModel)]="nuevoUsuario.genero" name="genero">
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label>Estado civil</label>
-                    <input type="text" class="form-control" [(ngModel)]="nuevoUsuario.estadoCivil" name="estadoCivil">
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label>Licencia de conducir</label>
-                    <input type="text" class="form-control" [(ngModel)]="nuevoUsuario.licencia" name="licencia">
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label>Rol</label>
-                    <select class="form-select" [(ngModel)]="nuevoUsuario.rol" name="rol" required>
-                      <option value="trabajador">Trabajador</option>
-                      <option value="empleador">Empleador</option>
-                    </select>
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label>Celular</label>
-                    <input type="text" class="form-control" [(ngModel)]="nuevoUsuario.contacto.celular" name="celular">
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label>Teléfono</label>
-                    <input type="text" class="form-control" [(ngModel)]="nuevoUsuario.contacto.telefono" name="telefono">
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label>Email</label>
-                    <input type="email" class="form-control" [(ngModel)]="nuevoUsuario.contacto.email" name="email" required>
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label>Dirección</label>
-                    <input type="text" class="form-control" [(ngModel)]="nuevoUsuario.contacto.direccion" name="direccion">
-                  </div>
-                </div>
-                <button type="submit" class="btn btn-success mt-3">Guardar perfil</button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </ng-container>
+ 
       <ng-container *ngIf="usuario && usuario.nombre">
         <!-- Mostrar el perfil existente con los datos del usuario -->
         <div class="row g-4">
@@ -256,7 +207,27 @@ interface Usuario {
               </div>
               <!-- Botón para ver postulaciones solo si el usuario es trabajador -->
               <div class="mt-2" *ngIf="usuario.rol === 'trabajador'">
-                <button class="btn btn-primary w-100" (click)="irAPostulaciones()">Ver mis postulaciones</button>
+                <button class="btn btn-primary w-100" 
+                        [disabled]="cargandoDatos" 
+                        (click)="irAPostulaciones()">
+                  <span *ngIf="cargandoDatos" class="spinner-border spinner-border-sm me-2"></span>
+                  {{ cargandoDatos ? 'Cargando...' : 'Ver mis postulaciones' }}
+                </button>
+              </div>
+              <!-- Botón para ver ofertas laborales solo si el usuario es empleador -->
+              <div class="mt-2" *ngIf="usuario.rol === 'empleador'">
+                <button class="btn btn-success w-100" 
+                        [disabled]="cargandoDatos" 
+                        (click)="irAMisOfertas()">
+                  <span *ngIf="cargandoDatos" class="spinner-border spinner-border-sm me-2"></span>
+                  {{ cargandoDatos ? 'Cargando...' : 'Mis ofertas laborales' }}
+                </button>
+                <button class="btn btn-outline-primary w-100 mt-2" 
+                        [disabled]="cargandoDatos" 
+                        (click)="crearOferta()">
+                  <span *ngIf="cargandoDatos" class="spinner-border spinner-border-sm me-2"></span>
+                  {{ cargandoDatos ? 'Cargando...' : 'Crear nueva oferta' }}
+                </button>
               </div>
             </div>
           </div>
@@ -494,11 +465,17 @@ interface Usuario {
       </div>
     </div>
   </div>
+
   `
 })
 
 
 export class PerfilComponent implements OnInit {
+  private cargandoPerfil = false;
+  public datosListos = false;
+  public cargandoDatos = false;
+  public loading = true; // Nuevo estado para el spinner global
+  
       // Devuelve el nombre legible del rol
       getNombreRol(rol: string | number): string {
         if (!rol) return '';
@@ -604,47 +581,105 @@ export class PerfilComponent implements OnInit {
   activeTab: 'educacion' | 'experiencia' | 'perfil' = 'educacion';
 
   // Navegación a la página de postulaciones
-  irAPostulaciones() {
-    // Si tienes lógica para cargar postulaciones aquí, haz la petición sin email y con el token
-    // Si solo navegas, la lógica debe estar en el componente de mis-postulaciones
+  async irAPostulaciones() {
+    await this.esperarDatos();
     this.router.navigate(['/mis-postulaciones']);
-    // Ejemplo de cómo hacer la petición correctamente:
-    // const token = localStorage.getItem('token');
-    // fetch('http://localhost:8081/api/postulaciones', {
-    //   method: 'GET',
-    //   headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
-    // })
-    // .then(res => res.ok ? res.json() : null)
-    // .then(data => {
-    //   // Procesa el array de postulaciones aquí
-    // });
+  }
+
+  // Métodos para empleadores
+  async irAMisOfertas() {
+    await this.esperarDatos();
+    this.router.navigate(['/ofertas']);
+  }
+
+  async crearOferta() {
+    await this.esperarDatos();
+    this.router.navigate(['/ofertas/nueva']);
+  }
+
+  // Método para esperar a que los datos estén listos
+  private async esperarDatos(): Promise<void> {
+    if (this.datosListos) {
+      return; // Los datos ya están listos
+    }
+
+    this.cargandoDatos = true;
+    console.log('Esperando a que los datos estén listos...');
+    
+    // Esperar hasta que los datos estén listos o timeout de 10 segundos
+    const timeout = 10000; // 10 segundos
+    const startTime = Date.now();
+    
+    while (!this.datosListos && (Date.now() - startTime) < timeout) {
+      await new Promise(resolve => setTimeout(resolve, 100)); // Esperar 100ms
+    }
+    
+    this.cargandoDatos = false;
+    
+    if (!this.datosListos) {
+      console.warn('Timeout esperando los datos del perfil');
+    } else {
+      console.log('Datos listos, procediendo con la navegación');
+    }
   }
 
   private auth = inject(AuthService);
   private msal = inject(MsalService);
+  private cdr = inject(ChangeDetectorRef);
   private route = inject(ActivatedRoute);
   private perfilReload = inject(PerfilReloadService);
 
   ngOnInit() {
-    const cargarPerfil = () => {
-      const account = this.msal.instance.getActiveAccount() || this.msal.instance.getAllAccounts()[0];
-      if (account && account.idTokenClaims) {
-        console.log('Claims del token:', account.idTokenClaims);
-        const email = String(
-          account.idTokenClaims['email'] ||
-          account.idTokenClaims['emails']?.[0] ||
-          account.idTokenClaims['preferred_username'] ||
-          account.username || ''
-        );
-        const token = localStorage.getItem('token');
-        fetch(`http://localhost:8081/api/auth/perfil?email=${email}`, {
-          method: 'GET',
-          headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
-        })
-        .then(res => res.ok ? res.json() : null)
-        .then(data => {
-          if (data && data.usuario) {
-            const u = data.usuario;
+    const cargarPerfil = async () => {
+      this.loading = true;
+      // Evitar m\u00faltiples llamadas simult\u00e1neas
+      if (this.cargandoPerfil) {
+        console.log('Ya se est\u00e1 cargando el perfil, ignorando llamada adicional');
+        return;
+      }
+      
+      this.cargandoPerfil = true;
+      this.datosListos = false; // Reset del estado
+      console.log('Iniciando carga del perfil...');
+      
+      try {
+        // Esperar a que MSAL est\u00e9 completamente inicializado
+        await this.msal.instance.handleRedirectPromise();
+        
+        // Intentar obtener la cuenta activa, si no existe, obtener la primera disponible
+        let account = this.msal.instance.getActiveAccount();
+        if (!account) {
+          const accounts = this.msal.instance.getAllAccounts();
+          if (accounts.length > 0) {
+            account = accounts[0];
+            this.msal.instance.setActiveAccount(account);
+          }
+        }
+        
+        if (account && account.idTokenClaims) {
+          console.log('Claims del token:', account.idTokenClaims);
+          const email = String(
+            account.idTokenClaims['email'] ||
+            account.idTokenClaims['emails']?.[0] ||
+            account.idTokenClaims['preferred_username'] ||
+            account.username || ''
+          );
+          
+          if (!email) {
+            console.error('No se pudo obtener el email del usuario');
+            return;
+          }
+          
+          const token = localStorage.getItem('token');
+          const response = await fetch(`http://localhost:8081/api/auth/perfil?email=${email}`, {
+            method: 'GET',
+            headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data && data.usuario) {
+              const u = data.usuario;
             this.usuario = {
               userId: u.userId || '',
               nombre: typeof u.nombreCompleto === 'string' ? u.nombreCompleto : (typeof u.nombre === 'string' ? u.nombre : ''),
@@ -667,14 +702,27 @@ export class PerfilComponent implements OnInit {
               habilidades: typeof u.habilidades === 'string' ? u.habilidades : '',
               cvAdjunto: typeof u.cvAdjunto === 'string' ? u.cvAdjunto : ''
             };
-            // Guardar usuario y rol en localStorage
-            try {
-              localStorage.setItem('usuario', JSON.stringify(this.usuario));
-              if (this.usuario.rol) {
-                localStorage.setItem('rol', this.usuario.rol);
-              }
-            } catch {}
+            
+            // Actualizar el rol en el servicio de auth
+            if (this.usuario.rol) {
+              this.auth.role.set(this.usuario.rol as any);
+              localStorage.setItem('auth', JSON.stringify({
+                role: this.usuario.rol,
+                user: {
+                  id: this.usuario.userId,
+                  userId: this.usuario.userId,
+                  nombre: this.usuario.nombre,
+                  email: email
+                }
+              }));
+            }
+            
+            console.log('Perfil cargado correctamente:', this.usuario);
+            this.datosListos = true; // Marcar datos como listos
+            this.loading = false;
+            this.cdr.detectChanges();
           } else {
+            console.log('Usuario no encontrado en BD, usando claims de Azure');
             const claims = account.idTokenClaims ?? {};
             this.usuario = {
               nombre: (typeof claims['given_name'] === 'string' && claims['given_name']) || (typeof claims['displayName'] === 'string' && claims['displayName']) || '',
@@ -722,23 +770,40 @@ export class PerfilComponent implements OnInit {
               cvAdjunto: this.usuario?.cvAdjunto || ''
             };
             console.log('Enviando usuario al backend:', usuarioSync);
-            this.auth.syncFullUserWithBackend(usuarioSync).then(obs => {
-              obs.subscribe({
-                next: res => {
-                  console.log('Respuesta del backend al sincronizar usuario:', res);
-                },
-                error: err => {
-                  console.error('Error al sincronizar usuario con backend:', err);
-                  if (err.error && err.error.error) {
-                    console.error('Mensaje específico del backend:', err.error.error);
+                    this.auth.syncFullUserWithBackend(usuarioSync).then(obs => {
+                      obs.subscribe({
+                        next: res => {
+                          console.log('Respuesta del backend al sincronizar usuario:', res);
+                        },
+                        error: err => {
+                          console.error('Error al sincronizar usuario con backend:', err);
+                          if (err.error && err.error.error) {
+                            console.error('Mensaje específico del backend:', err.error.error);
+                          }
+                        }
+                      });
+                    }).catch(err => {
+                      console.error('Error al sincronizar con backend:', err);
+                    });
+                    this.datosListos = true; // Marcar datos como listos también para usuarios nuevos
+                    this.loading = false;
+                    this.cdr.detectChanges();
                   }
+                  } else {
+                    console.error('Error al obtener el perfil del backend:', response.status);
+                  }
+                } else {
+                  console.log('No hay cuenta de usuario autenticada');
                 }
-              });
-            });
-          }
-        });
-      }
-    };
+              } catch (error) {
+                console.error('Error al cargar el perfil:', error);
+              } finally {
+                this.cargandoPerfil = false;
+                this.loading = false;
+                this.cdr.detectChanges();
+                console.log('Carga del perfil completada');
+              }
+            };
 
     this.route.queryParams.subscribe(() => {
       cargarPerfil();
@@ -795,6 +860,7 @@ export class PerfilComponent implements OnInit {
       if (data && data.curriculum) {
         // Actualizar usuario con los datos del currículum
         this.usuario = { ...this.usuario, ...data.curriculum };
+        this.cdr.detectChanges();
       }
     });
   }
@@ -813,12 +879,13 @@ export class PerfilComponent implements OnInit {
   // 4. Método para guardar los datos editados
   guardarDatosEditados() {
     const token = localStorage.getItem('token');
+    console.log('Token JWT usado en PUT /api/auth/perfil:', token);
     const email = this.editarUsuario?.contacto?.email || '';
     const usuarioSync = {
       userId: '',
       email: this.editarUsuario?.contacto?.email || '',
       nombreCompleto: this.editarUsuario?.nombre || '',
-      rol: 'trabajador',
+      rol: this.editarUsuario?.rol || '',
       fechaCreacion: new Date(),
       fotoUrl: this.editarUsuario?.fotoUrl || '',
       nacionalidad: this.editarUsuario?.nacionalidad || '',
@@ -906,6 +973,7 @@ export class PerfilComponent implements OnInit {
           experiencias: Array.isArray(this.usuario?.experiencias) ? this.usuario.experiencias : [],
           userId: typeof this.usuario?.userId === 'string' ? this.usuario.userId : ''
         };
+        this.cdr.detectChanges();
       }
     });
   }

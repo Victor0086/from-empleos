@@ -1,8 +1,9 @@
-import { ApplicationConfig, importProvidersFrom } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom, APP_INITIALIZER } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
-import { provideHttpClient, withFetch, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { provideHttpClient, withFetch, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { environment } from '../environments/environment';
 
 import {
@@ -61,28 +62,29 @@ export function MSALGuardConfigFactory(): MsalGuardConfiguration {
 
 export function MSALInterceptorConfigFactory(): MsalInterceptorConfiguration {
   const protectedResourceMap = new Map<string, Array<string>>();
-  
-  // Asigna los scopes requeridos a la URL de la API
-  protectedResourceMap.set(environment.apiConfig.url, environment.apiConfig.scopes);
-
+  // Asigna los scopes requeridos a la ruta general de la API
+  protectedResourceMap.set('/api/', environment.apiConfig.scopes);
   return {
     interactionType: InteractionType.Redirect,
     protectedResourceMap
   };
 }
 
+export function MSALInitializer(msalService: MsalService) {
+  return () => msalService.instance.initialize();
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
     importProvidersFrom(BrowserModule),
-    
-    provideHttpClient(withFetch(), ),
+    importProvidersFrom(BrowserAnimationsModule),
+    provideHttpClient(withFetch(), withInterceptorsFromDi()),
     {
       provide: HTTP_INTERCEPTORS,
       useClass: MsalInterceptor,
       multi: true
     },
-
     importProvidersFrom(MsalModule),
     {
       provide: MSAL_INSTANCE,
@@ -96,9 +98,14 @@ export const appConfig: ApplicationConfig = {
       provide: MSAL_INTERCEPTOR_CONFIG,
       useFactory: MSALInterceptorConfigFactory
     },
-    
     MsalService,
     MsalGuard,
-    MsalBroadcastService
+    MsalBroadcastService,
+    {
+      provide: APP_INITIALIZER,
+      useFactory: MSALInitializer,
+      deps: [MsalService],
+      multi: true
+    }
   ]
 };

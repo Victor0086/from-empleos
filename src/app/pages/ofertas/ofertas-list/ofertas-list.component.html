@@ -1,1 +1,111 @@
-<p>ofertas-list works!</p>
+<div class="container py-4">
+  <!-- Vista para Empleadores -->
+  <div *ngIf="auth.role() === 'empleador'">
+    <!-- Spinner de carga para empleador -->
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status" style="width: 4rem; height: 4rem;">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p class="mt-3 text-muted">Cargando tus ofertas laborales...</p>
+    </div>
+    <!-- Contenido solo si no está cargando -->
+    <div *ngIf="!loading">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2>Mis Ofertas Laborales</h2>
+      <button class="btn btn-primary" (click)="crearNuevaOferta()">
+        <mat-icon>add</mat-icon>
+        Nueva Oferta
+      </button>
+    </div>
+    </div>
+
+    <div class="row">
+      <div class="col-12">
+        <div *ngIf="misOfertas.length === 0" class="alert alert-info text-center">
+          <mat-icon class="me-2">work_off</mat-icon>
+          No tienes ofertas publicadas aún. <a (click)="crearNuevaOferta()" class="alert-link" style="cursor: pointer;">Crear tu primera oferta</a>
+        </div>
+
+        <div *ngFor="let oferta of misOfertas" class="card mb-3">
+          <div class="card-body">
+            <div class="row align-items-center">
+              <div class="col-md-8">
+                <h5 class="card-title">{{ oferta.titulo }}</h5>
+                <p class="card-text text-muted mb-1">
+                  <mat-icon class="me-1">location_on</mat-icon>
+                  {{ oferta.location || oferta.comuna }}
+                </p>
+                <p class="card-text text-muted mb-2">
+                  <mat-icon class="me-1">work</mat-icon>
+                  {{ oferta.contrato_type || oferta.tipo }}
+                </p>
+                <p class="card-text small">{{ oferta.descripcion }}</p>
+              </div>
+              <div class="col-md-4 text-end">
+                <div class="mb-2">
+                  <span [class]="getEstadoBadgeClass(oferta.estado)" class="badge">
+                    <mat-icon class="me-1">{{ oferta.estado === 'ABIERTA' ? 'radio_button_checked' : 'cancel' }}</mat-icon>
+                    {{ getEstadoTexto(oferta.estado) }}
+                  </span>
+                </div>
+                <div class="btn-group-vertical d-grid gap-1">
+                  <button class="btn btn-outline-primary btn-sm" (click)="verPostulantes(oferta.id)">
+                    <mat-icon class="me-1">people</mat-icon>
+                    Ver Postulaciones
+                  </button>
+                  <button 
+                    class="btn btn-sm"
+                    [class.btn-success]="oferta.estado === 'CERRADA'"
+                    [class.btn-warning]="oferta.estado === 'ABIERTA'"
+                    (click)="cambiarEstado(oferta)"
+                    [disabled]="cambiandoEstado === oferta.id">
+                    <mat-icon class="me-1">{{ oferta.estado === 'ABIERTA' ? 'close' : 'refresh' }}</mat-icon>
+                    {{ oferta.estado === 'ABIERTA' ? 'Cerrar Oferta' : 'Reabrir' }}
+                  </button>
+                  <button *ngIf="oferta.estado === 'CERRADA'" class="btn btn-danger btn-sm" (click)="eliminarOferta(oferta)">
+                    <mat-icon class="me-1">delete</mat-icon>
+                    Eliminar Oferta
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vista para cualquier usuario excepto empleador -->
+  <div *ngIf="auth.role() !== 'empleador'">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div class="fw-semibold">{{ ofertas.length }} ofertas de empleo disponibles</div>
+      <div>
+        <span class="me-2">Ordenar por:</span>
+        <button class="btn btn-dark btn-sm me-1" [class.active]="ordenActual==='relevantes'" (click)="ordenarPor('relevantes')">Relevantes</button>
+        <button class="btn btn-light btn-sm" [class.active]="ordenActual==='recientes'" (click)="ordenarPor('recientes')">Recientes</button>
+      </div>
+    </div>
+
+    <div *ngFor="let e of ofertasOrdenadas" class="bg-white rounded shadow-sm p-3 mb-3 d-flex flex-column flex-md-row gap-3 align-items-md-center oferta-card" (click)="verDetalle(e.id)" style="cursor:pointer;">
+      <div class="flex-grow-1">
+        <div class="d-flex align-items-center mb-1">
+          <span [class]="getBadgeClass(e.fecha)" style="font-size:0.75rem;">
+            {{ e.fecha === 'hoy' ? 'Publicado hoy' : e.fecha === 'ayer' ? 'Publicado ayer' : 'Hace más de un día' }}
+          </span>
+          <span class="fw-bold ms-2">{{ e.titulo }}</span>
+        </div>
+        <div class="text-muted mb-2">{{ e.area || 'Área no especificada' }} • {{ e.tipo || e.contrato_type }}</div>
+        <div class="mb-2">{{ e.comuna || e.location }}</div>
+        <div class="mb-2 small">{{ e.descripcion }}</div>
+        <div class="d-flex gap-2 mb-2">
+          <button class="btn btn-outline-primary btn-sm" (click)="$event.stopPropagation(); abrirPostulacionModal(e.id)">Postulación rápida</button>
+        </div>
+      </div>
+      <div class="d-flex flex-column align-items-end">
+        <div class="mb-1"><mat-icon class="me-1">location_on</mat-icon> {{ e.comuna || e.location }}</div>
+        <div class="mb-1"><mat-icon class="me-1">business_center</mat-icon> Presencial</div>
+        <button class="btn btn-light"><mat-icon>favorite_border</mat-icon></button>
+      </div>
+    </div>
+  </div>
+</div>

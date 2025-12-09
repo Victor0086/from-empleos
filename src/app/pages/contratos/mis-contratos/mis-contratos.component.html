@@ -1,0 +1,86 @@
+<div class="container mt-4">
+    <h2 class="mb-4">Mis Contratos</h2>
+
+    <div *ngIf="loading" class="text-center p-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+    </div>
+
+    <div *ngIf="!loading && contratos.length === 0" class="alert alert-info">
+        No tienes contratos generados aún.
+    </div>
+
+    <div *ngIf="!loading && contratos.length > 0">
+        <table mat-table [dataSource]="contratos" class="mat-elevation-z8 w-100">
+
+            <!-- ID Column -->
+            <ng-container matColumnDef="id">
+                <th mat-header-cell *matHeaderCellDef> ID </th>
+                <td mat-cell *matCellDef="let contrato"> #{{contrato.id}} </td>
+            </ng-container>
+
+            <!-- Oferta Column -->
+            <ng-container matColumnDef="oferta">
+                <th mat-header-cell *matHeaderCellDef> Oferta </th>
+                <td mat-cell *matCellDef="let contrato">
+                    <!-- Aquí accederíamos al título de la oferta si el backend lo envía en la postulación -->
+                    Oferta #{{contrato.postulacion.idOferta}}
+                </td>
+            </ng-container>
+
+            <!-- Estado Column -->
+            <ng-container matColumnDef="estado">
+                <th mat-header-cell *matHeaderCellDef> Estado </th>
+                <td mat-cell *matCellDef="let contrato">
+                    <mat-chip-option [color]="getColorEstado(contrato.estado)" selected>
+                        {{contrato.estado}}
+                    </mat-chip-option>
+                </td>
+            </ng-container>
+
+            <!-- Firmas Column -->
+            <ng-container matColumnDef="firmas">
+                <th mat-header-cell *matHeaderCellDef> Estado Firmas </th>
+                <td mat-cell *matCellDef="let contrato">
+                    <div class="d-flex gap-2">
+                        <span title="Trabajador" [class.text-success]="contrato.firmaTrabajador"
+                            [class.text-muted]="!contrato.firmaTrabajador">
+                            <mat-icon>person</mat-icon>
+                        </span>
+                        <span title="Empleador" [class.text-success]="contrato.firmaEmpleador"
+                            [class.text-muted]="!contrato.firmaEmpleador">
+                            <mat-icon>business</mat-icon>
+                        </span>
+                        <span title="Notario" [class.text-success]="contrato.firmaNotario"
+                            [class.text-muted]="!contrato.firmaNotario">
+                            <mat-icon>gavel</mat-icon>
+                        </span>
+                    </div>
+                </td>
+            </ng-container>
+
+            <!-- Acciones Column -->
+            <ng-container matColumnDef="acciones">
+                <th mat-header-cell *matHeaderCellDef> Acciones </th>
+                <td mat-cell *matCellDef="let contrato">
+
+                    <button mat-raised-button color="primary" *ngIf="puedeFirmar(contrato)" (click)="firmar(contrato)"
+                        [disabled]="firmandoId === contrato.id">
+
+                        <mat-icon>edit</mat-icon>
+                        {{ firmandoId === contrato.id ? 'Firmando...' : 'Firmar Contrato' }}
+                    </button>
+
+                    <span *ngIf="contrato.estado === 'PENDIENTE_FIRMAS' && !puedeFirmar(contrato)" class="texto-espera">
+                        Ya firmaste (Esperando a la contraparte)
+                    </span>
+
+                </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+    </div>
+</div>
