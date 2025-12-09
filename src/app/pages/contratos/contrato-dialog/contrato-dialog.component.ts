@@ -1,0 +1,31 @@
+import { Component, Inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { Contrato } from '../../../core/services/contrato.service';
+
+@Component({
+  selector: 'app-contrato-dialog',
+  standalone: true,
+  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule],
+  templateUrl: './contrato-dialog.component.html',
+  styleUrl: './contrato-dialog.component.css'
+})
+export class ContratoDialogComponent {
+fechaActual = new Date();
+
+  constructor(
+    public dialogRef: MatDialogRef<ContratoDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: { 
+      contrato: Contrato,
+      // Estos datos ideales vendrían del backend (JOINs), 
+      // si no los tienes, puedes pasarlos desde la tabla o usar placeholders
+      nombreEmpleador?: string,
+      nombreTrabajador?: string,
+      tituloOferta?: string,
+      sueldo?: number,
+      tipoContrato?: string
+    }
+  ) {}
+}
