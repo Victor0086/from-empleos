@@ -19,8 +19,6 @@ fechaActual = new Date();
     public dialogRef: MatDialogRef<ContratoDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { 
       contrato: Contrato,
-      // Estos datos ideales vendrían del backend (JOINs), 
-      // si no los tienes, puedes pasarlos desde la tabla o usar placeholders
       nombreEmpleador?: string,
       nombreTrabajador?: string,
       tituloOferta?: string,

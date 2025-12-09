@@ -71,27 +71,18 @@ export class MisContratosComponent implements OnInit {
   }
 
   puedeFirmar(contrato: Contrato): boolean {
-    // 1. Si el contrato no está pendiente o ya está activo, nadie puede firmar.
     if (contrato.estado !== 'PENDIENTE_FIRMAS') {
       return false;
     }
 
-    // 2. Identificar qué rol juego yo en este contrato
-    // Nota: Asegúrate de que contrato.postulacion traiga el trabajadorId
     const soyTrabajador = this.currentUserId === contrato.postulacion.trabajadorId;
-    
-    // Para saber si soy empleador, verificamos que NO sea trabajador 
-    // (o idealmente comparamos con el ID del empleador si viene en el JSON)
     const soyEmpleador = !soyTrabajador; 
 
-    // 3. Verificar si ya firmé
     if (soyTrabajador) {
-      // Si soy trabajador, muestro el botón SOLO si mi firma es null
       return contrato.firmaTrabajador === null;
     } 
     
     if (soyEmpleador) {
-      // Si soy empleador, muestro el botón SOLO si mi firma es null
       return contrato.firmaEmpleador === null;
     }
 
@@ -99,12 +90,10 @@ export class MisContratosComponent implements OnInit {
   }
 
   firmar(contrato: Contrato) {
-    // 1. Abrir el Popup para mostrar el contrato
     const dialogRef = this.dialog.open(ContratoDialogComponent, {
       width: '600px',
       data: { 
         contrato: contrato,
-        // Datos simulados (idealmente vendrían del backend)
         tituloOferta: 'Desarrollador Java (Ejemplo)', 
         sueldo: 1500000,
         nombreEmpleador: 'Empresa Demo S.A.',
@@ -112,7 +101,6 @@ export class MisContratosComponent implements OnInit {
       }
     });
 
-    // 2. Esperar confirmación del Popup
     dialogRef.afterClosed().subscribe(confirmado => {
       if (confirmado === true) {
         this.ejecutarFirma(contrato);
@@ -123,69 +111,29 @@ export class MisContratosComponent implements OnInit {
   private ejecutarFirma(contrato: Contrato) {
     this.firmandoId = contrato.id;
     
-    // Llamada al servicio
     this.contratoService.firmarContrato(contrato.id).subscribe({
       next: (respuesta: any) => {
-        // La respuesta ahora es un objeto: { mensaje: "...", contrato: {...} }
         const contratoActualizado = respuesta.contrato; 
         const mensajeServidor = respuesta.mensaje;
 
-        // Actualizar la tabla localmente
         const index = this.contratos.findIndex(c => c.id === contratoActualizado.id);
         if (index !== -1) {
           this.contratos[index] = contratoActualizado;
-          this.contratos = [...this.contratos]; // Refrescar tabla visualmente (trigger change detection)
+          this.contratos = [...this.contratos];
         }
         
         this.firmandoId = null;
 
-        // Mostrar el mensaje de éxito que vino del backend
         alert(mensajeServidor); 
       },
       error: (err) => {
         console.error('Error al firmar', err);
         this.firmandoId = null;
         
-        // Manejo de errores
         const errorMsg = err.error || 'Error al firmar el contrato.';
         alert(errorMsg);
       }
     });
   }
-
-  // firmar(contrato: Contrato) {
-  //   if (!confirm('¿Estás seguro de que deseas firmar digitalmente este contrato?')) return;
-
-  //   this.firmandoId = contrato.id;
-    
-  //   this.contratoService.firmarContrato(contrato.id).subscribe({
-  //     next: (respuesta) => {
-  //       // AQUI ESTA EL CAMBIO:
-  //       // La respuesta ahora es un objeto: { mensaje: "...", contrato: {...} }
-  //       const contratoActualizado = respuesta.contrato; 
-  //       const mensajeServidor = respuesta.mensaje;
-
-  //       // 1. Actualizar la tabla
-  //       const index = this.contratos.findIndex(c => c.id === contratoActualizado.id);
-  //       if (index !== -1) {
-  //         this.contratos[index] = contratoActualizado;
-  //         this.contratos = [...this.contratos]; // Refrescar tabla visualmente
-  //       }
-        
-  //       this.firmandoId = null;
-
-  //       // 2. Mostrar el mensaje personalizado que vino del Controller
-  //       alert(mensajeServidor); 
-  //     },
-  //     error: (err) => {
-  //       console.error('Error al firmar', err);
-  //       this.firmandoId = null;
-  //       // Si el backend envía el mensaje de error en el body (como lo configuramos en el catch)
-  //       // a veces viene en err.error
-  //       const errorMsg = err.error || 'Error al firmar el contrato.';
-  //       alert(errorMsg);
-  //     }
-  //   });
-  // }
 
 }
