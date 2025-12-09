@@ -1,5 +1,3 @@
-import { LoginSuccessDialogComponent } from '../../dialogs/login-success-dialog.component';
-
 // Other imports...
 import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { PerfilReloadService } from '../../core/services/perfil-reload.service';
@@ -19,7 +17,7 @@ import { filter, takeUntil } from 'rxjs/operators';
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, MatIconModule, NgIf, MatDialogModule, LoginSuccessDialogComponent],
+  imports: [RouterLink, RouterLinkActive, MatIconModule, NgIf, MatDialogModule],
   templateUrl: './navbar.component.html'
 })
 export class NavbarComponent implements OnInit, OnDestroy {
@@ -59,8 +57,14 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.showMenu = false;
   }
 
-  toggleMenu() {
+  toggleMenu(event?: Event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    console.log('Toggle menu clicked, current showMenu:', this.showMenu);
     this.showMenu = !this.showMenu;
+    console.log('New showMenu value:', this.showMenu);
   }
   loginDisplay = false;
   userEmail: string = '';
@@ -84,6 +88,17 @@ export class NavbarComponent implements OnInit, OnDestroy {
       .subscribe(() => {
         this.setLoginDisplay();
       });
+
+    // Cerrar menú al hacer clic fuera
+    document.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement;
+      const menuButton = document.querySelector('.navbar .btn');
+      const dropdownMenu = document.querySelector('.dropdown-menu');
+      
+      if (this.showMenu && !menuButton?.contains(target) && !dropdownMenu?.contains(target)) {
+        this.showMenu = false;
+      }
+    });
   }
 
 

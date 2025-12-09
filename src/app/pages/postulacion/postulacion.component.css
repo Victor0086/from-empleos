@@ -1,0 +1,26 @@
+.postulacion-card {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.upload-area {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.upload-area:hover {
+  border-color: #2196f3;
+  background-color: #f0f8ff;
+}
+
+.upload-area.drag-over {
+  border-color: #2196f3;
+  background-color: #e3f2fd;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.mat-mdc-card-header {
+  padding-bottom: 16px;
+}

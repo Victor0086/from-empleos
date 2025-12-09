@@ -6,6 +6,8 @@ import { DocumentosUploadComponent } from './pages/documentos/documentos-upload/
 import { RegisterComponent } from './pages/auth/register/register.component';
 import { MsalGuard } from '@azure/msal-angular';        // MsalGuard
 import { RoleGuard } from './core/guards/role.guard';    // RoleGuard
+import { MisPostulacionesComponent } from './pages/ofertas/mis-postulaciones.component';
+import { MisContratosComponent } from './pages/contratos/mis-contratos/mis-contratos.component';
 
 export const routes: Routes = [
   { path: 'perfil', loadComponent: () => import('./pages/perfil/perfil.component').then(m => m.PerfilComponent) },
@@ -14,17 +16,17 @@ export const routes: Routes = [
   // Ruta dummy para recarga de perfil
   { path: 'dummy', component: HomeComponent },
 
+  { path: 'mis-contratos', loadComponent: () => import('./pages/contratos/mis-contratos/mis-contratos.component').then(m => m.MisContratosComponent), canActivate: [MsalGuard] },
 
-
+  // Empresa (debe ir ANTES de las rutas más generales)
+  { path: 'ofertas/nueva', component: OfertaFormComponent, canActivate: [MsalGuard, RoleGuard], data: { roles: ['empleador', 'admin'] } },
 
   // Trabajador
   { path: 'ofertas', component: OfertasListComponent },
   { path: 'ofertas/:id', loadComponent: () => import('./pages/ofertas/oferta-detail.component').then(m => m.OfertaDetailComponent) },
-  { path: 'mis-postulaciones', loadComponent: () => import('./pages/ofertas/mis-postulaciones.component').then(m => m.MisPostulacionesComponent), canActivate: [MsalGuard, RoleGuard], data: { roles: ['trabajador','admin'] } },
-  { path: 'documentos', component: DocumentosUploadComponent, canActivate: [MsalGuard, RoleGuard], data: { roles: ['trabajador','admin'] } },
-
-  // Empresa
-  { path: 'ofertas/nueva', component: OfertaFormComponent, canActivate: [MsalGuard, RoleGuard], data: { roles: ['empleador','admin'] } },
+  { path: 'postulacion', loadComponent: () => import('./pages/postulacion/postulacion.component').then(m => m.PostulacionComponent), canActivate: [MsalGuard] },
+  { path: 'mis-postulaciones', loadComponent: () => import('./pages/ofertas/mis-postulaciones.component').then(m => m.MisPostulacionesComponent), canActivate: [MsalGuard] },
+  { path: 'documentos', component: DocumentosUploadComponent, canActivate: [MsalGuard, RoleGuard], data: { roles: ['trabajador', 'admin'] } },
 
   { path: '**', redirectTo: '' }
 ];

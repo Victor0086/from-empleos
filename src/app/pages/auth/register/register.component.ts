@@ -23,13 +23,13 @@ export class RegisterComponent {
     private authService: AuthService,
     private router: Router
   ) {
-    this.registerForm = this.fb.group({
-      nombre: ['', [Validators.required, Validators.minLength(2)]],
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
-      confirmPassword: ['', [Validators.required]],
-      tipoUsuario: ['trabajador', [Validators.required]]
-    }, { validators: this.passwordMatchValidator });
+      this.registerForm = this.fb.group({
+        nombre: ['', [Validators.required, Validators.minLength(2)]],
+        email: ['', [Validators.required, Validators.email]],
+        password: ['', [Validators.required, Validators.minLength(6)]],
+        confirmPassword: ['', [Validators.required]],
+        rol: ['trabajador', [Validators.required]]
+      }, { validators: this.passwordMatchValidator });
   }
 
   passwordMatchValidator(form: any) {

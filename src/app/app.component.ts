@@ -191,13 +191,18 @@ export class AppComponent implements OnInit, OnDestroy {
         this.authService.instance.setActiveAccount(response.account);
         this.setLoginDisplay();
 
-        // Mostrar modal de éxito
+        // Mostrar modal de éxito SIN redirección automática
         const { LoginSuccessDialogComponent } = await import('./login-success-dialog.component');
         const dialogRef = this.dialog.open(LoginSuccessDialogComponent, {
           width: '350px',
           autoFocus: false,
         });
-        setTimeout(() => dialogRef.close(), 2000);
+        
+        // Cerrar modal pero NO navegar automáticamente
+        setTimeout(() => {
+          dialogRef.close();
+          // El usuario decidirá dónde ir desde el home
+        }, 2000);
 
         this.authService.acquireTokenSilent({
           account: response.account,

@@ -13,9 +13,7 @@
         <li class="nav-item" *ngIf="loginDisplay && auth.role()==='trabajador'">
           <a class="nav-link" routerLink="/ofertas" routerLinkActive="active">Ofertas</a>
         </li>
-        <li class="nav-item" *ngIf="loginDisplay && auth.role()==='trabajador'">
-          <a class="nav-link" routerLink="/documentos" routerLinkActive="active">Documentos</a>
-        </li>
+
 
         <!-- Empresa -->
         <li class="nav-item" *ngIf="loginDisplay && auth.role()==='empleador'">
@@ -42,7 +40,7 @@
 
           <!-- Usuario autenticado: mostrar avatar, correo y botones visibles -->
           <div *ngIf="loginDisplay && !loadingLogin" class="d-flex align-items-center position-relative">
-            <button class="btn d-flex align-items-center me-3" (click)="toggleMenu()" style="border:2px solid #fff; background:transparent; color:#fff; border-radius:30px; padding:4px 16px;">
+            <button type="button" class="btn d-flex align-items-center me-3" (click)="toggleMenu($event)" style="border:2px solid #fff; background:transparent; color:#fff; border-radius:30px; padding:4px 16px;">
               <span class="avatar-circle me-2" style="width:32px;height:32px;line-height:32px;font-size:1.2rem;background:#888;color:#fff;border-radius:50%;display:inline-block;overflow:hidden;">
                 <ng-container *ngIf="fotoUrl; else inicialAvatar">
                   <img [src]="fotoUrl" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
@@ -57,9 +55,26 @@
               <button class="dropdown-item d-flex align-items-center" (click)="verMiCV()">
                 <span class="material-icons me-2">badge</span> Mi CV
               </button>
-              <a class="dropdown-item d-flex align-items-center" [routerLink]="'/mis-postulaciones'" (click)="showMenu = false">
-                <span class="material-icons me-2">send</span> Mis postulaciones
-              </a>
+              
+              <!-- Opciones para trabajadores -->
+              <ng-container *ngIf="auth.role() === 'trabajador'">
+                <a class="dropdown-item d-flex align-items-center" [routerLink]="'/mis-postulaciones'" (click)="showMenu = false">
+                  <span class="material-icons me-2">send</span> Mis Postulaciones
+                </a>
+                <a class="dropdown-item d-flex align-items-center" [routerLink]="'/mis-contratos'" (click)="showMenu = false">
+                  <span class="material-icons me-2">send</span> Mis Contratos
+                </a>
+              </ng-container>
+              
+              <!-- Opciones para empleadores -->
+              <ng-container *ngIf="auth.role() === 'empleador'">
+                <a class="dropdown-item d-flex align-items-center" [routerLink]="'/ofertas'" (click)="showMenu = false">
+                  <span class="material-icons me-2">work</span> Mis ofertas laborales
+                </a>
+                <a class="dropdown-item d-flex align-items-center" [routerLink]="'/ofertas/nueva'" (click)="showMenu = false">
+                  <span class="material-icons me-2">add_circle</span> Crear nueva oferta
+                </a>
+              </ng-container>
               
             </div>
             <button class="btn btn-warning d-flex align-items-center ms-2" (click)="logout()">
