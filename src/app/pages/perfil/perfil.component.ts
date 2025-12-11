@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { MsalService } from '@azure/msal-angular';
 import { Router, NavigationEnd } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 interface Usuario {
   userId?: string;
@@ -671,7 +672,7 @@ export class PerfilComponent implements OnInit {
           }
           
           const token = localStorage.getItem('token');
-          const response = await fetch(`http://localhost:8081/api/auth/perfil?email=${email}`, {
+          const response = await fetch(`${environment.apiConfig.url}/auth/perfil?email=${email}`, {
             method: 'GET',
             headers: token ? { 'Authorization': `Bearer ${token}` } : undefined
           });
@@ -850,7 +851,7 @@ export class PerfilComponent implements OnInit {
       }
     });
     const token = localStorage.getItem('token');
-    fetch('http://localhost:8081/api/curriculum', {
+    fetch(`${environment.apiConfig.url}/api/curriculum`, {
       method: 'POST',
       headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
       body: formData
@@ -879,7 +880,7 @@ export class PerfilComponent implements OnInit {
   // 4. Método para guardar los datos editados
   guardarDatosEditados() {
     const token = localStorage.getItem('token');
-    console.log('Token JWT usado en PUT /api/auth/perfil:', token);
+    console.log('Token JWT usado en PUT /auth/perfil:', token);
     const email = this.editarUsuario?.contacto?.email || '';
     const usuarioSync = {
       userId: '',
@@ -905,7 +906,7 @@ export class PerfilComponent implements OnInit {
       habilidades: this.editarUsuario?.habilidades || '',
       cvAdjunto: this.editarUsuario?.cvAdjunto || ''
     };
-    fetch(`http://localhost:8081/api/auth/perfil?email=${email}`, {
+    fetch(`${environment.apiConfig.url}/auth/perfil?email=${email}`, {
       method: 'PUT',
       headers: token ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } : { 'Content-Type': 'application/json' },
       body: JSON.stringify(usuarioSync)
@@ -996,7 +997,7 @@ export class PerfilComponent implements OnInit {
     if (this.usuario && this.usuario.userId) {
       this.editarEducacion.userId = this.usuario.userId;
     }
-    fetch('http://localhost:8081/api/auth/educacion', {
+    fetch(`${environment.apiConfig.url}/api/auth/educacion }`, {
       method: 'PUT',
       headers: token ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } : { 'Content-Type': 'application/json' },
       body: JSON.stringify(this.editarEducacion)
@@ -1045,7 +1046,7 @@ export class PerfilComponent implements OnInit {
       experienciaPayload = { ...experienciaPayload, userId };
     }
     console.log('Payload enviado:', experienciaPayload); // Verifica que userId esté presente
-    fetch('http://localhost:8081/api/auth/experiencia', {
+    fetch(`${environment.apiConfig.url}/auth/experiencia`, {
       method: 'PUT',
       headers: token ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } : { 'Content-Type': 'application/json' },
       body: JSON.stringify(experienciaPayload)
@@ -1093,7 +1094,7 @@ export class PerfilComponent implements OnInit {
       ...this.editarPerfil,
       resumenProfesional: this.editarPerfil.resumen
     };
-    fetch(`http://localhost:8081/api/auth/perfil?email=${email}`, {
+    fetch(`${environment.apiConfig.url}/auth/perfil?email=${email}`, {
       method: 'PUT',
       headers: token ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` } : { 'Content-Type': 'application/json' },
       body: JSON.stringify(perfilPayload)

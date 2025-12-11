@@ -1,19 +1,17 @@
-// Other imports...
-import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, ElementRef, HostListener } from '@angular/core';
 import { PerfilReloadService } from '../../core/services/perfil-reload.service';
-import { Router } from '@angular/router';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { Inject } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service'; 
 import { AuthEventsService } from '../../core/services/auth-events.service';
-import { MsalService, MsalBroadcastService, MSAL_GUARD_CONFIG, MsalGuardConfiguration } from '@azure/msal-angular';
+import { MsalService, MsalBroadcastService } from '@azure/msal-angular';
 import { PopupRequest, InteractionStatus } from '@azure/msal-browser';
 import { environment } from '../../../environments/environment';
 import { Subject } from 'rxjs';
 import { filter, takeUntil } from 'rxjs/operators';
+
 @Component({
   selector: 'app-navbar',
   standalone: true,
@@ -22,119 +20,91 @@ import { filter, takeUntil } from 'rxjs/operators';
 })
 export class NavbarComponent implements OnInit, OnDestroy {
   showMenu = false;
-  dialog!: MatDialog;
-  // En la clase NavbarComponent, agregar propiedad para la foto de perfil:
   fotoUrl: string = '';
+  given_name: string = '';
+  loadingLogin = false;
+  
+  // Eliminamos loginDisplay, usaremos auth.isLogged()
+  
+  private readonly _destroying$ = new Subject<void>();
+  dialog = inject(MatDialog);
 
- 
   constructor(
-    public auth: AuthService,
+    public auth: AuthService, // Signal auth.isLogged() se usa en HTML
     private authService: MsalService,
     private msalBroadcastService: MsalBroadcastService,
     private router: Router,
     private authEvents: AuthEventsService,
     private cdr: ChangeDetectorRef,
-    private perfilReload: PerfilReloadService
+    private perfilReload: PerfilReloadService,
+    private eRef: ElementRef // Para detectar clicks fuera
   ) {
-    this.dialog = inject(MatDialog);
-    this.auth.restore();
-    // Suscribirse solo al evento global de login
+    // Al instanciar, intentamos restaurar sesión si no se ha hecho
+    this.auth.restore(); 
     this.authEvents.login$.subscribe(() => this.login());
   }
 
-  verMiCV() {
-    this.router.navigate(['/perfil']);
-    setTimeout(() => {
-      this.perfilReload.triggerReload();
-    }, 100);
-    this.showMenu = false;
-  }
-
-
-
-  verMisPostulaciones() {
-    this.router.navigate(['/mis-postulaciones']);
-    this.showMenu = false;
-  }
-
-  toggleMenu(event?: Event) {
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
-    console.log('Toggle menu clicked, current showMenu:', this.showMenu);
-    this.showMenu = !this.showMenu;
-    console.log('New showMenu value:', this.showMenu);
-  }
-  loginDisplay = false;
-  userEmail: string = '';
-  given_name: string = '';
-  loadingLogin = false;
-  private readonly _destroying$ = new Subject<void>();
-
-  // Eliminar constructor duplicado, ya está arriba con PerfilReloadService
-
   ngOnInit(): void {
-    // Asegurar que el usuario activo esté seteado tras recarga
-    const accounts = this.authService.instance.getAllAccounts();
-    if (accounts.length > 0 && !this.authService.instance.getActiveAccount()) {
-      this.authService.instance.setActiveAccount(accounts[0]);
-    }
+    // Escuchar cambios en MSAL para actualizar nombre y foto
     this.msalBroadcastService.inProgress$
       .pipe(
         filter((status: InteractionStatus) => status === InteractionStatus.None),
         takeUntil(this._destroying$)
       )
       .subscribe(() => {
-        this.setLoginDisplay();
+        this.updateUserData();
       });
-
-    // Cerrar menú al hacer clic fuera
-    document.addEventListener('click', (event) => {
-      const target = event.target as HTMLElement;
-      const menuButton = document.querySelector('.navbar .btn');
-      const dropdownMenu = document.querySelector('.dropdown-menu');
       
-      if (this.showMenu && !menuButton?.contains(target) && !dropdownMenu?.contains(target)) {
-        this.showMenu = false;
-      }
-    });
+    // Llamada inicial
+    this.updateUserData();
   }
 
-
-  ngOnDestroy(): void {
-    this._destroying$.next(undefined);
-    this._destroying$.complete();
-  }
-
-  setLoginDisplay() {
-    this.loginDisplay = this.authService.instance.getAllAccounts().length > 0;
-    if (this.loginDisplay) {
-      const account = this.authService.instance.getAllAccounts()[0];
-      this.userEmail = account?.username || '';
-      this.given_name = account?.name || '';
-      // Obtener foto de perfil si existe en el perfil guardado
+  // Lógica unificada para obtener datos del usuario
+  updateUserData() {
+    const accounts = this.authService.instance.getAllAccounts();
+    if (accounts.length > 0) {
+      const account = accounts[0];
+      this.authService.instance.setActiveAccount(account);
+      
+      this.given_name = account.name || '';
+      
+      // Recuperar foto del localStorage
       const userProfile = localStorage.getItem('userProfile');
       if (userProfile) {
         try {
           const user = JSON.parse(userProfile);
           this.fotoUrl = user.fotoUrl || '';
-        } catch (e) {
-          console.error('Error al parsear userProfile:', e);
-          this.fotoUrl = '';
-          localStorage.removeItem('userProfile'); // Limpia el dato corrupto
+        } catch { 
+          this.fotoUrl = ''; 
         }
-      } else {
-        this.fotoUrl = '';
       }
-      // Guardar token en localStorage para el interceptor
-      this.authService.acquireTokenSilent({
-        scopes: environment.apiConfig.scopes,
-        account: account
-      }).subscribe(result => {
-        localStorage.setItem('token', result.accessToken);
-      });
     }
+  }
+
+  // --- LOGICA DEL MENU DESPLEGABLE ---
+  toggleMenu(event: Event) {
+    event.stopPropagation(); // Evita que el HostListener lo cierre inmediatamente
+    this.showMenu = !this.showMenu;
+  }
+
+  closeMenu() {
+    this.showMenu = false;
+  }
+
+  // Detectar clicks en cualquier parte del documento
+  @HostListener('document:click', ['$event'])
+  clickout(event: any) {
+    // Si el click NO fue dentro del componente, cerrar menú
+    if(!this.eRef.nativeElement.contains(event.target)) {
+      this.showMenu = false;
+    }
+  }
+  // -----------------------------------
+
+  verMiCV() {
+    this.router.navigate(['/perfil']);
+    setTimeout(() => this.perfilReload.triggerReload(), 100);
+    this.closeMenu();
   }
 
   login() {
@@ -142,36 +112,33 @@ export class NavbarComponent implements OnInit, OnDestroy {
     const loginRequest: PopupRequest = {
       scopes: environment.apiConfig.scopes
     };
+    
     this.authService.loginPopup(loginRequest)
       .subscribe({
         next: async (result) => {
-          // Sincronizar usuario con backend después del login MSAL
-          this.syncUserWithBackend(result.account);
-          // Actualizar estado inmediatamente tras login
-          this.setLoginDisplay();
+          await this.syncUserWithBackend(result.account);
+          this.updateUserData(); // Actualizar nombre/foto
+          this.auth.restore();   // Forzar actualización de signals en AuthService
           this.loadingLogin = false;
 
-          // Mostrar modal de éxito
+          // Cargar modal lazy-load
           const { LoginSuccessDialogComponent } = await import('../../dialogs/login-success-dialog.component');
-          const dialogRef = this.dialog.open(LoginSuccessDialogComponent, {
-            width: '350px',
-            autoFocus: false,
-          });
+          const dialogRef = this.dialog.open(LoginSuccessDialogComponent, { width: '350px' });
+          
           setTimeout(() => {
-            dialogRef.close();
-            this.setLoginDisplay();
-            this.cdr.detectChanges();
-          }, 4000);
+            if (dialogRef && dialogRef.componentInstance) {
+               dialogRef.close();
+            }
+          }, 2000);
         },
         error: (error) => {
           this.loadingLogin = false;
-          console.error('Error en login MSAL:', error);
+          console.error(error);
         }
       });
   }
 
   private async syncUserWithBackend(account: any) {
-    // Enviar datos del usuario MSAL al backend para sincronización
     const email = account.idTokenClaims?.emails?.[0] || account.username;
     const userData = {
       email: email,
@@ -180,34 +147,29 @@ export class NavbarComponent implements OnInit, OnDestroy {
       azureId: account.homeAccountId
     };
 
-    // Usar AuthService para sincronizar con backend
     (await this.auth.syncUserWithBackend(userData)).subscribe({
       next: (response) => {
-        console.log('Usuario sincronizado con backend:', response);
-        // Guardar datos adicionales del backend en localStorage
         localStorage.setItem('userProfile', JSON.stringify(response.user));
-      },
-      error: (error) => {
-        console.warn('Error al sincronizar con backend:', error);
-        // No bloquear el login si falla la sincronización con backend
+        this.updateUserData(); // Refrescar foto si vino del backend
       }
     });
   }
 
   logout() {
-    // Limpiar token del localStorage
-    localStorage.removeItem('token');
-    
-    this.authService.logoutPopup({
-      mainWindowRedirectUri: "/"
-    });
+    this.auth.logout(); // Limpia signals y localStorage
+    this.authService.logoutPopup({ mainWindowRedirectUri: "/" });
+    this.showMenu = false;
   }
   
   crearCuenta() {
-    // Redirigir al flujo de registro de Azure AD B2C
-      this.authService.loginRedirect({
-        authority: 'https://instantjobb2c.b2clogin.com/instantjobb2c.onmicrosoft.com/B2C_1_Registro',
-        scopes: ['openid', 'profile', 'email']
-      });
+    this.authService.loginRedirect({
+      authority: 'https://instantjobb2c.b2clogin.com/instantjobb2c.onmicrosoft.com/B2C_1_Registro',
+      scopes: ['openid', 'profile', 'email']
+    });
+  }
+
+  ngOnDestroy(): void {
+    this._destroying$.next(undefined);
+    this._destroying$.complete();
   }
 }

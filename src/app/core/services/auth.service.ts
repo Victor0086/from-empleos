@@ -58,6 +58,7 @@ export class AuthService {
   private apiUrl = environment.apiConfig.url;
 
   constructor(private http: HttpClient, private msal: MsalService) {
+
     this.restore();
   }
 
@@ -122,16 +123,42 @@ export class AuthService {
     localStorage.removeItem('token');
   }
 
+  // restore(): void {
+  //   const saved = localStorage.getItem('auth');
+  //   if (saved) {
+  //     try {
+  //       const parsed = JSON.parse(saved) as { role: UserRole };
+  //       this.isLogged.set(true);
+  //       this.role.set(parsed.role);
+  //     } catch {
+  //       localStorage.removeItem('auth');
+  //     }
+  //   }
+  // }
+
   restore(): void {
     const saved = localStorage.getItem('auth');
-    if (saved) {
+    const token = localStorage.getItem('token');
+
+    if (saved && token) {
       try {
         const parsed = JSON.parse(saved) as { role: UserRole };
         this.isLogged.set(true);
         this.role.set(parsed.role);
+        return; 
       } catch {
-        localStorage.removeItem('auth');
+        this.logout();
       }
+    }
+
+    const msalAccounts = this.msal.instance.getAllAccounts();
+    
+    if (msalAccounts.length > 0) {
+      this.msal.instance.setActiveAccount(msalAccounts[0]);
+      this.isLogged.set(true);
+      
+      const claims: any = msalAccounts[0].idTokenClaims;
+      this.role.set('trabajador'); 
     }
   }
 }

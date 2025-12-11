@@ -2,6 +2,7 @@ import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { CommonModule, NgIf, NgFor } from '@angular/common';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-postulantes-dialog',
@@ -23,7 +24,7 @@ import { CommonModule, NgIf, NgFor } from '@angular/common';
           <div>
             <strong>Curriculum:</strong>
             <ng-container *ngIf="postulante.curriculumName && postulante.curriculumPath; else noCV">
-              <a [href]="'http://localhost:8081/uploads/curriculums/' + postulante.curriculumPath" target="_blank">{{ postulante.curriculumName }}</a>
+              <a [href]="urlBase + '/uploads/curriculums/' + postulante.curriculumPath" target="_blank">{{ postulante.curriculumName }}</a>
             </ng-container>
             <ng-template #noCV>No disponible</ng-template>
           </div>
@@ -38,6 +39,7 @@ import { CommonModule, NgIf, NgFor } from '@angular/common';
   imports: [CommonModule, NgIf, NgFor, MatDialogModule, MatButtonModule],
 })
 export class PostulantesDialogComponent {
+  public urlBase = environment.apiConfig.url.replace('/api', '');
   constructor(
     public dialogRef: MatDialogRef<PostulantesDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any[]

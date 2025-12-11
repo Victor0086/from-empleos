@@ -1,0 +1,6 @@
+projectKey=InstantJob-UI
+serverUrl=http://localhost:9000
+serverVersion=25.11.0.114957
+dashboardUrl=http://localhost:9000/dashboard?id=InstantJob-UI
+ceTaskId=b0b5a98e-a795-4c01-9a1b-74e6497da7c0
+ceTaskUrl=http://localhost:9000/api/ce/task?id=b0b5a98e-a795-4c01-9a1b-74e6497da7c0

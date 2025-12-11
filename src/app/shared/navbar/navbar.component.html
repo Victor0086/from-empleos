@@ -9,27 +9,21 @@
 
     <div class="collapse navbar-collapse" id="navMain">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <!-- Trabajador -->
-        <li class="nav-item" *ngIf="loginDisplay && auth.role()==='trabajador'">
+        <li class="nav-item" *ngIf="auth.isLogged() && auth.role() === 'trabajador'">
           <a class="nav-link" routerLink="/ofertas" routerLinkActive="active">Ofertas</a>
         </li>
 
-
-        <!-- Empresa -->
-        <li class="nav-item" *ngIf="loginDisplay && auth.role()==='empleador'">
+        <li class="nav-item" *ngIf="auth.isLogged() && auth.role() === 'empleador'">
           <a class="nav-link" routerLink="/ofertas/nueva" routerLinkActive="active">Publicar</a>
         </li>
       </ul>
 
       <div class="d-flex">
-
-          <!-- Loading spinner durante login -->
           <div *ngIf="loadingLogin" class="d-flex align-items-center me-2">
-            <span class="spinner"></span>
+            <span class="spinner-border text-light spinner-border-sm" role="status"></span>
           </div>
 
-          <!-- Botones para usuario no autenticado -->
-          <ng-container *ngIf="!loginDisplay && !loadingLogin">
+          <ng-container *ngIf="!auth.isLogged() && !loadingLogin">
             <button class="btn btn-outline-light d-flex align-items-center me-2" (click)="login()">
               <span class="material-icons me-1">login</span> Ingresar
             </button>
@@ -38,9 +32,11 @@
             </button>
           </ng-container>
 
-          <!-- Usuario autenticado: mostrar avatar, correo y botones visibles -->
-          <div *ngIf="loginDisplay && !loadingLogin" class="d-flex align-items-center position-relative">
-            <button type="button" class="btn d-flex align-items-center me-3" (click)="toggleMenu($event)" style="border:2px solid #fff; background:transparent; color:#fff; border-radius:30px; padding:4px 16px;">
+          <div *ngIf="auth.isLogged() && !loadingLogin" class="d-flex align-items-center position-relative">
+            
+            <button type="button" class="btn d-flex align-items-center me-3 user-dropdown-btn" 
+                    (click)="toggleMenu($event)" 
+                    style="border:2px solid #fff; background:transparent; color:#fff; border-radius:30px; padding:4px 16px;">
               <span class="avatar-circle me-2" style="width:32px;height:32px;line-height:32px;font-size:1.2rem;background:#888;color:#fff;border-radius:50%;display:inline-block;overflow:hidden;">
                 <ng-container *ngIf="fotoUrl; else inicialAvatar">
                   <img [src]="fotoUrl" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
@@ -51,35 +47,37 @@
               </span>
               <span class="fw-bold">{{ given_name }}</span>
             </button>
-            <div *ngIf="showMenu" class="dropdown-menu show" style="right:0; left:auto; min-width:180px; position:absolute; top:48px; z-index:1000;">
+
+            <div *ngIf="showMenu" class="dropdown-menu show" 
+                 style="right:0; left:auto; min-width:180px; position:absolute; top:48px; z-index:1000;">
+              
               <button class="dropdown-item d-flex align-items-center" (click)="verMiCV()">
                 <span class="material-icons me-2">badge</span> Mi CV
               </button>
               
-              <!-- Opciones para trabajadores -->
               <ng-container *ngIf="auth.role() === 'trabajador'">
-                <a class="dropdown-item d-flex align-items-center" [routerLink]="'/mis-postulaciones'" (click)="showMenu = false">
+                <a class="dropdown-item d-flex align-items-center" [routerLink]="'/mis-postulaciones'" (click)="closeMenu()">
                   <span class="material-icons me-2">send</span> Mis postulaciones
                 </a>
-                <a class="dropdown-item d-flex align-items-center" [routerLink]="'/mis-contratos'" (click)="showMenu = false">
-                  <span class="material-icons me-2">send</span> Mis Contratos
+                <a class="dropdown-item d-flex align-items-center" [routerLink]="'/mis-contratos'" (click)="closeMenu()">
+                  <span class="material-icons me-2">description</span> Mis Contratos
                 </a>
               </ng-container>
               
-              <!-- Opciones para empleadores -->
               <ng-container *ngIf="auth.role() === 'empleador'">
-                <a class="dropdown-item d-flex align-items-center" [routerLink]="'/ofertas'" (click)="showMenu = false">
+                <a class="dropdown-item d-flex align-items-center" [routerLink]="'/ofertas'" (click)="closeMenu()">
                   <span class="material-icons me-2">work</span> Mis ofertas laborales
                 </a>
-                <a class="dropdown-item d-flex align-items-center" [routerLink]="'/ofertas/nueva'" (click)="showMenu = false">
+                <a class="dropdown-item d-flex align-items-center" [routerLink]="'/ofertas/nueva'" (click)="closeMenu()">
                   <span class="material-icons me-2">add_circle</span> Crear nueva oferta
                 </a>
               </ng-container>
               
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item text-danger d-flex align-items-center" (click)="logout()">
+                <span class="material-icons me-2">logout</span> Cerrar sesión
+              </button>
             </div>
-            <button class="btn btn-warning d-flex align-items-center ms-2" (click)="logout()">
-              <span class="material-icons me-1">logout</span> Cerrar sesión
-            </button>
           </div>
       </div>
     </div>
