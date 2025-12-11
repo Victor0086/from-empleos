@@ -1,7 +1,9 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, inject, OnDestroy } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { CommonModule, NgIf, NgFor } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-postulantes-dialog',
@@ -27,6 +29,38 @@ import { CommonModule, NgIf, NgFor } from '@angular/common';
             </ng-container>
             <ng-template #noCV>No disponible</ng-template>
           </div>
+          <div class="mt-2" *ngIf="postulante.estado === 'PENDIENTE' || postulante.estado == null || postulante.estado === undefined">
+            <button mat-raised-button color="primary" (click)="aceptarPostulacion(postulante)" class="me-2">
+              Aceptar
+            </button>
+            <button mat-raised-button color="warn" (click)="rechazarPostulacion(postulante)">
+              Rechazar
+            </button>
+          </div>
+          <div class="mt-2" *ngIf="postulante.estado === 'ACEPTADA'">
+            <span class="badge bg-success">Aceptada</span>
+          </div>
+          <div class="mt-2" *ngIf="postulante.estado === 'RECHAZADA'">
+            <span class="badge bg-danger">Rechazada</span>
+          </div>
+          <div class="mt-2" *ngIf="postulante.estado === 'CONTRATO_GENERADO'">
+            <span class="badge bg-warning text-dark">Pendiente de firma del trabajador</span>
+            <button class="btn btn-sm btn-outline-info mt-2" (click)="verContrato(postulante)">
+              Ver Contrato
+            </button>
+          </div>
+          <div class="mt-2" *ngIf="postulante.estado === 'CONTRATO_FIRMADO'">
+            <span class="badge bg-success">Contrato firmado/Activo</span>
+            <button class="btn btn-sm btn-outline-success mt-2" (click)="verContrato(postulante)">
+              Ver Contrato Firmado
+            </button>
+          </div>
+          <div class="mt-2" *ngIf="postulante.estado === 'CONTRATO_VALIDADO'">
+            <span class="badge bg-primary">Contrato validado por notario</span>
+            <button class="btn btn-sm btn-outline-primary mt-2" (click)="verContrato(postulante)">
+              Ver Contrato Validado
+            </button>
+          </div>
         </div>
       </div>
     </mat-dialog-content>
@@ -37,9 +71,159 @@ import { CommonModule, NgIf, NgFor } from '@angular/common';
   standalone: true,
   imports: [CommonModule, NgIf, NgFor, MatDialogModule, MatButtonModule],
 })
-export class PostulantesDialogComponent {
+export class PostulantesDialogComponent implements OnDestroy {
+  private http = inject(HttpClient);
+  private apiUrl = environment.apiConfig.url;
+  private refreshInterval: any;
+
   constructor(
     public dialogRef: MatDialogRef<PostulantesDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any[]
-  ) {}
+  ) {
+    // Refrescar estados cada 5 segundos para mostrar cambios del backend
+    this.refreshInterval = setInterval(() => {
+      this.refrescarEstados();
+    }, 5000);
+  }
+
+  ngOnDestroy() {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
+  }
+
+  aceptarPostulacion(postulante: any) {
+    const token = localStorage.getItem('token');
+    const headers: any = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    // Usar los IDs correctos del postulante
+    const ofertaId = postulante.oferta_id || postulante.ofertaId;
+    const trabajadorId = postulante.trabajador_id || postulante.trabajadorId;
+    // Actualizar estado de postulación
+    this.http.put(`${this.apiUrl}/postulaciones/${ofertaId}/${trabajadorId}/estado`, 
+      { estado: 'ACEPTADA' }, 
+      { headers }
+    ).subscribe({
+      next: (response) => {
+        // No actualizar el estado aquí, lo haremos después del contrato
+        alert('Postulación aceptada correctamente');
+        // Crear contrato automáticamente
+        this.crearContrato(postulante);
+      },
+      error: (error) => {
+        console.error('Error al aceptar postulación:', error);
+        alert('Error al aceptar la postulación');
+      }
+    });
+  }
+
+  rechazarPostulacion(postulante: any) {
+    const token = localStorage.getItem('token');
+    const headers: any = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const ofertaId = postulante.oferta_id || postulante.ofertaId;
+    const trabajadorId = postulante.trabajador_id || postulante.trabajadorId;
+    this.http.put(`${this.apiUrl}/postulaciones/${ofertaId}/${trabajadorId}/estado`, 
+      { estado: 'RECHAZADA' }, 
+      { headers }
+    ).subscribe({
+      next: (response) => {
+        postulante.estado = 'RECHAZADA';
+        alert('Postulación rechazada');
+      },
+      error: (error) => {
+        console.error('Error al rechazar postulación:', error);
+        alert('Error al rechazar la postulación');
+      }
+    });
+  }
+
+  private crearContrato(postulante: any) {
+    const token = localStorage.getItem('token');
+    const headers: any = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const ofertaId = postulante.oferta_id || postulante.ofertaId;
+    const trabajadorId = postulante.trabajadorId || postulante.trabajador_id;
+    
+    console.log('Datos del postulante para contrato:', {
+      ofertaId,
+      trabajadorId,
+      postulante
+    });
+    
+    // Body solo con los campos requeridos por el backend
+    const contratoData = {
+      oferta_id: ofertaId,
+      trabajador_id: trabajadorId
+    };
+
+    this.http.post(`${this.apiUrl}/contratos`, contratoData, { headers }).subscribe({
+      next: (response) => {
+        console.log('Contrato creado automáticamente:', response);
+        // Actualizar el estado del postulante a CONTRATO_GENERADO
+        postulante.estado = 'CONTRATO_GENERADO';
+      },
+      error: (error) => {
+        console.error('Error al crear contrato:', error);
+      }
+    });
+  }
+
+  // Refrescar estados de postulaciones para mostrar cambios del backend
+  private refrescarEstados() {
+    console.log('Refrescando estados de postulaciones...');
+    
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    // Obtener la oferta ID del primer postulante
+    const ofertaId = this.data[0]?.oferta_id || this.data[0]?.ofertaId;
+    if (!ofertaId) return;
+
+    const headers: any = {};
+    headers['Authorization'] = `Bearer ${token}`;
+
+    // Recargar postulaciones de esta oferta
+    this.http.get(`${this.apiUrl}/postulaciones/oferta/${ofertaId}`, { headers }).subscribe({
+      next: (postulaciones: any) => {
+        console.log('Estados actualizados recibidos:', postulaciones);
+        
+        // Actualizar estados en el diálogo
+        if (Array.isArray(postulaciones)) {
+          postulaciones.forEach(postulacionActualizada => {
+            const index = this.data.findIndex(p => 
+              (p.trabajador_id || p.trabajadorId) === (postulacionActualizada.trabajador_id || postulacionActualizada.trabajadorId)
+            );
+            
+            if (index !== -1) {
+              // Actualizar solo el estado para mantener otros datos
+              this.data[index].estado = postulacionActualizada.estado;
+              console.log(`Estado actualizado para ${postulacionActualizada.trabajador_id}: ${postulacionActualizada.estado}`);
+            }
+          });
+        }
+      },
+      error: (error) => {
+        console.error('Error al refrescar estados:', error);
+      }
+    });
+  }
+
+  // Ver contrato generado
+  verContrato(postulante: any) {
+    const ofertaId = postulante.oferta_id || postulante.ofertaId;
+    const trabajadorId = postulante.trabajadorId || postulante.trabajador_id;
+    
+    console.log('Redirigiendo a ver contrato para:', { ofertaId, trabajadorId });
+    
+    // Redirigir a la página de contratos o abrir en nueva pestaña
+    window.open('/mis-contratos', '_blank');
+  }
 }

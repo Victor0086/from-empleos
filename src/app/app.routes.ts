@@ -18,6 +18,9 @@ export const routes: Routes = [
 
   { path: 'mis-contratos', loadComponent: () => import('./pages/contratos/mis-contratos/mis-contratos.component').then(m => m.MisContratosComponent), canActivate: [MsalGuard] },
 
+  // Notario
+  { path: 'notario/panel', loadComponent: () => import('./pages/notario/notario-panel.component').then(m => m.NotarioPanelComponent), canActivate: [MsalGuard, RoleGuard], data: { roles: ['notario', 'admin'] } },
+
   // Empresa (debe ir ANTES de las rutas más generales)
   { path: 'ofertas/nueva', component: OfertaFormComponent, canActivate: [MsalGuard, RoleGuard], data: { roles: ['empleador', 'admin'] } },
 

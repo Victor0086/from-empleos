@@ -235,61 +235,72 @@ interface Usuario {
       </ng-container>
     </ng-container>
     <ng-container *ngIf="usuario && !usuario.nombre">
-      <!-- Formulario de currículum para usuario nuevo -->
+      <!-- Vista de perfil vacía editable para usuario nuevo -->
       <div class="container py-4">
-        <div class="row justify-content-center">
-          <div class="col-md-8">
-            <div class="card p-4">
-              <h4>Genera tu currículum</h4>
-              <form (ngSubmit)="guardarCurriculum()" #cvForm="ngForm">
-                <div class="mb-3">
-                  <label>Nombre completo</label>
-                  <input type="text" class="form-control" [(ngModel)]="nuevoCV.nombre" name="nombre" required>
-                </div>
-                <div class="mb-3">
-                  <label>Email</label>
-                  <input type="email" class="form-control" [(ngModel)]="nuevoCV.email" name="email" required>
-                </div>
-                <div class="mb-3">
-                  <label>Teléfono</label>
-                  <input type="text" class="form-control" [(ngModel)]="nuevoCV.telefono" name="telefono">
-                </div>
-                <div class="mb-3">
-                  <label>Ciudad</label>
-                  <input type="text" class="form-control" [(ngModel)]="nuevoCV.ciudad" name="ciudad">
-                </div>
-                <div class="mb-3">
-                  <label>Profesión/Cargo</label>
-                  <input type="text" class="form-control" [(ngModel)]="nuevoCV.cargo" name="cargo">
-                </div>
-                <div class="mb-3">
-                  <label>Descripción profesional</label>
-                  <textarea class="form-control" [(ngModel)]="nuevoCV.descripcion" name="descripcion" rows="3"></textarea>
-                </div>
-                <div class="mb-3">
-                  <label>Experiencias profesionales</label>
-                  <textarea class="form-control" [(ngModel)]="nuevoCV.experiencias" name="experiencias" rows="3" placeholder="Ejemplo: Informático en ACT, Mayo 2021 - Actualidad"></textarea>
-                </div>
-                <div class="mb-3">
-                  <label>Estudios</label>
-                  <textarea class="form-control" [(ngModel)]="nuevoCV.estudios" name="estudios" rows="2" placeholder="Ejemplo: Duoc UC, Marzo 2018 - Julio 2020"></textarea>
-                </div>
-                <div class="mb-3">
-                  <label>Movilidad y licencias</label>
-                  <textarea class="form-control" [(ngModel)]="nuevoCV.movilidad" name="movilidad" rows="2" placeholder="Ejemplo: Licencia B, D, No tengo vehículo propio"></textarea>
-                </div>
-                <div class="mb-3">
-                  <label>Documentos adjuntos</label>
-                  <input type="file" (change)="onDocumentoSelected($event)" multiple>
-                </div>
-                <div class="mb-3">
-                  <label>Carta de presentación</label>
-                  <textarea class="form-control" [(ngModel)]="nuevoCV.carta" name="carta" rows="2"></textarea>
-                </div>
-                <button type="submit" class="btn btn-success mt-3">Guardar currículum</button>
-              </form>
+        <div class="row g-4">
+          <div class="col-md-3">
+            <div class="card p-3 text-center">
+              <div class="avatar-circle mb-2" style="width:120px;height:120px;line-height:120px;font-size:3rem;background:#888;color:#fff;border-radius:50%;display:inline-block;">
+                ?
+              </div>
+              <div class="mb-2">
+                <input type="file" accept="image/*" (change)="onFotoSelected($event)" #fotoInput style="display:none;">
+                <button class="btn btn-sm btn-outline-primary" (click)="$event.preventDefault(); fotoInput.click();">Subir foto</button>
+              </div>
+              <div class="d-flex justify-content-center align-items-center mb-2">
+                <div class="fw-bold mb-2">(Sin nombre)</div>
+                <button class="btn btn-link p-0 ms-2" (click)="abrirModalEdicion()">
+                  <span class="material-icons">edit</span>
+                </button>
+              </div>
+              <div class="text-start">
+                <div class="mb-1"><strong>Nacionalidad:</strong> </div>
+                <div class="mb-1"><strong>Fecha de nacimiento:</strong> </div>
+                <div class="mb-1"><strong>Género:</strong> </div>
+                <div class="mb-1"><strong>Estado civil:</strong> </div>
+                <div class="mb-1"><strong>Licencia de Conducir:</strong> </div>
+              </div>
+            </div>
+            <div class="card p-3 mt-3">
+              <div class="fw-bold mb-2">Datos de contacto</div>
+              <div class="mb-1"><span class="material-icons align-middle">smartphone</span> </div>
+              <div class="mb-1"><span class="material-icons align-middle">phone</span> </div>
+              <div class="mb-1"><span class="material-icons align-middle">email</span> </div>
+              <div class="mb-1"><span class="material-icons align-middle">location_on</span> </div>
             </div>
           </div>
+          <div class="col-md-6">
+            <div class="card p-3">
+              <ul class="nav nav-tabs mb-3">
+                <li class="nav-item"><a class="nav-link active">Educación</a></li>
+                <li class="nav-item"><a class="nav-link">Experiencia</a></li>
+                <li class="nav-item"><a class="nav-link">Perfil</a></li>
+              </ul>
+              <div>
+                <div class="fw-bold mb-2">Resumen profesional</div>
+                <div class="mb-3"></div>
+                <div class="fw-bold mb-2">Habilidades</div>
+                <div class="mb-3"></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card p-3 mb-3">
+              <div class="fw-bold mb-2">CV adjunto</div>
+            </div>
+            <div class="card p-3">
+              <div class="fw-bold mb-2">Mejora tu CV agregando:</div>
+              <div><span class="material-icons align-middle">flag</span> Objetivo</div>
+              <div><span class="material-icons align-middle">psychology</span> Conocimientos y habilidades</div>
+            </div>
+            <div class="card p-3 mt-3">
+              <div class="fw-bold mb-2">Tipo de usuario</div>
+              <div class="mb-1">(Sin rol)</div>
+            </div>
+          </div>
+        </div>
+        <div class="alert alert-info mt-4 text-center">
+          <strong>¡Bienvenido!</strong> Para comenzar, completa tu perfil con tus datos personales, educación y experiencia. Así podrás generar tu currículum y postular a ofertas.
         </div>
       </div>
     </ng-container>

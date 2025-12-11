@@ -1,0 +1,51 @@
+/* Estilos para los mensajes informativos */
+.alert {
+  border-radius: 8px;
+  border: 1px solid;
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.alert-info {
+  background-color: #e3f2fd;
+  border-color: #2196f3;
+  color: #1565c0;
+}
+
+.alert-success {
+  background-color: #e8f5e8;
+  border-color: #4caf50;
+  color: #2e7d32;
+}
+
+.alert mat-icon {
+  font-size: 1.2rem;
+  margin-right: 8px;
+}
+
+/* Mejorar el espaciado de la tabla */
+.mat-mdc-table {
+  background: white;
+  border-radius: 8px;
+}
+
+.mat-mdc-header-cell {
+  font-weight: 600;
+  color: #333;
+}
+
+.mat-mdc-cell {
+  padding: 12px 8px;
+}
+
+/* Estilos para los botones */
+.mat-mdc-raised-button {
+  margin-right: 8px;
+  border-radius: 6px;
+}
+
+/* Contenedor de acciones */
+.acciones-container {
+  min-width: 200px;
+}

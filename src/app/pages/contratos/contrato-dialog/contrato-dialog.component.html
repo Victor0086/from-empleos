@@ -1,0 +1,49 @@
+<h2 mat-dialog-title>
+      <mat-icon class="align-middle me-2">description</mat-icon>
+      Contrato de Trabajo #{{data.contrato.id}}
+    </h2>
+
+    <mat-dialog-content class="mat-typography">
+      <div class="contrato-paper p-4 border shadow-sm my-2">
+        <h3 class="text-center mb-4">CONTRATO INDIVIDUAL DE TRABAJO</h3>
+        
+        <p>
+          En Santiago de Chile, a <strong>{{ fechaActual | date:'longDate' }}</strong>, entre 
+          la empresa <strong>{{ data.nombreEmpleador || 'EMPRESA EJEMPLO S.A.' }}</strong> 
+          y don/doña <strong>{{ data.nombreTrabajador || 'TRABAJADOR EJEMPLO' }}</strong>, 
+          se ha convenido el siguiente contrato de trabajo:
+        </p>
+
+        <p>
+          <strong>PRIMERO:</strong> El trabajador se compromete a desempeñar el cargo de 
+          <strong>{{ data.tituloOferta || 'CARGO POR DEFINIR' }}</strong>.
+        </p>
+
+        <p>
+          <strong>SEGUNDO:</strong> La remuneración será la suma de 
+          <strong>$ {{ data.sueldo || '0' }}</strong> pesos mensuales.
+        </p>
+
+        <p>
+          <strong>TERCERO:</strong> El presente contrato tendrá una duración 
+          <strong>{{ data.tipoContrato || 'INDEFINIDA' }}</strong>.
+        </p>
+
+        <br>
+        
+        <div class="alert alert-warning d-flex align-items-center" role="alert">
+          <mat-icon class="me-2">info</mat-icon>
+          <div>
+            Este es un documento generado automáticamente. Al presionar "Firmar", 
+            usted acepta los términos y condiciones legales simulados.
+          </div>
+        </div>
+      </div>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>Cancelar</button>
+      <button mat-raised-button color="primary" [mat-dialog-close]="true" cdkFocusInitial>
+        <mat-icon>edit</mat-icon> Firmar Digitalmente
+      </button>
+    </mat-dialog-actions>

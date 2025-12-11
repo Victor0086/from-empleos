@@ -21,6 +21,10 @@ export interface Contrato {
 export class ContratoService {
   private apiUrl = `${environment.apiConfig.url}/contratos`;
 
+  public getApiUrl(): string {
+    return this.apiUrl;
+  }
+
   constructor(private http: HttpClient, private authService: MsalService) { }
 
   private getAuthHeaders(): Observable<HttpHeaders> {
@@ -57,6 +61,16 @@ export class ContratoService {
         switchMap(headers => {
             //return this.http.post<Contrato>(`${this.apiUrl}/${idContrato}/firmar`, {}, { headers });
             return this.http.post<any>(`${this.apiUrl}/${idContrato}/firmar`, {}, { headers });
+        })
+    );
+  }
+
+  rechazarContrato(idContrato: number): Observable<any> {
+    return this.getAuthHeaders().pipe(
+        switchMap(headers => {
+            return this.http.post<any>(`${this.apiUrl}/${idContrato}/rechazar`, 
+              { motivo: 'El trabajador rechazó el contrato.' }, 
+              { headers });
         })
     );
   }

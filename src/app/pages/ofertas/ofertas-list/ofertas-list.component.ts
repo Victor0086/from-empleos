@@ -314,11 +314,17 @@ export class OfertasListComponent implements OnInit {
       headers['Authorization'] = `Bearer ${token}`;
     }
     this.http.get<any[]>(`${this.apiUrl}/postulaciones/oferta/${ofertaId}`, { headers }).subscribe({
-      next: (postulantes: any) => {
+      next: (postulantes: any[]) => {
         this.loading = false;
+        // Mapear para asegurar que cada postulante tenga oferta_id y trabajador_id definidos
+        const postulantesMapeados = (postulantes || []).map(p => ({
+          ...p,
+          oferta_id: p.oferta_id ?? ofertaId,
+          trabajador_id: p.trabajador_id ?? p.trabajadorId ?? p.id_trabajador ?? '',
+        }));
         this.dialog.open(PostulantesDialogComponent, {
           width: '400px',
-          data: postulantes || []
+          data: postulantesMapeados
         });
       },
       error: (error: any) => {

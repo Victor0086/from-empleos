@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
-import { Router, NavigationEnd } from '@angular/router';
+import { Router, NavigationEnd, RouterLink } from '@angular/router';
 import { DatePipe, CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { MsalService } from '@azure/msal-angular';
@@ -7,7 +7,7 @@ import { MsalService } from '@azure/msal-angular';
 @Component({
   selector: 'app-mis-postulaciones',
   standalone: true,
-  imports: [CommonModule, DatePipe],
+  imports: [CommonModule, DatePipe, RouterLink],
   template: `
     <div class="container py-4">
       <h2>Mis Postulaciones</h2>
@@ -96,9 +96,17 @@ import { MsalService } from '@azure/msal-angular';
                 </p>
               </div>
               <div class="col-md-4 text-end">
-                <span class="badge bg-info fs-6 mb-2">
+                <span class="badge fs-6 mb-2" 
+                      [class.bg-warning]="(p.estado || 'ENVIADA') === 'ENVIADA'"
+                      [class.bg-success]="(p.estado || 'ENVIADA') === 'ACEPTADA'"
+                      [class.bg-danger]="(p.estado || 'ENVIADA') === 'RECHAZADA'">
                   {{ p.estado || 'ENVIADA' }}
                 </span>
+                <div *ngIf="(p.estado || 'ENVIADA') === 'ACEPTADA'" class="alert alert-success mt-2 p-2">
+                  <i class="fas fa-check-circle"></i> ¡Tu postulación fue aceptada! 
+                  <br><small>Pronto recibirás información del contrato.</small>
+                  <br><a routerLink="/mis-contratos" class="btn btn-sm btn-outline-success mt-1">Ver Contratos</a>
+                </div>
                 <p class="text-muted mb-0">
                   <i class="fas fa-calendar me-1"></i>
                   {{ p.fecha | date:'dd/MM/yyyy' }}
