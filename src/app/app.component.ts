@@ -200,8 +200,9 @@ export class AppComponent implements OnInit, OnDestroy {
         
         // Cerrar modal pero NO navegar automáticamente
         setTimeout(() => {
-          dialogRef.close();
-          // El usuario decidirá dónde ir desde el home
+           if (dialogRef && dialogRef.componentInstance) {
+             dialogRef.close();
+           }
         }, 2000);
 
         this.authService.acquireTokenSilent({

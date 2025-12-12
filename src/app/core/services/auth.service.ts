@@ -123,15 +123,61 @@ export class AuthService {
   }
 
   restore(): void {
+    // Primero verificar si hay datos guardados del backend
     const saved = localStorage.getItem('auth');
-    if (saved) {
+    const token = localStorage.getItem('token');
+
+    if (saved && token) {
       try {
-        const parsed = JSON.parse(saved) as { role: UserRole };
+        const parsed = JSON.parse(saved) as { role: UserRole, user?: any };
         this.isLogged.set(true);
         this.role.set(parsed.role);
+        return; 
       } catch {
+        // Si hay error en los datos guardados, limpiar
         localStorage.removeItem('auth');
+        localStorage.removeItem('token');
       }
+    }
+
+    // Si no hay datos del backend, verificar MSAL
+    const msalAccounts = this.msal.instance.getAllAccounts();
+    
+    if (msalAccounts.length > 0) {
+      // Establecer cuenta activa
+      this.msal.instance.setActiveAccount(msalAccounts[0]);
+      this.isLogged.set(true);
+      
+      // Intentar obtener el rol de los datos guardados del usuario
+      const userProfile = localStorage.getItem('userProfile');
+      if (userProfile) {
+        try {
+          const user = JSON.parse(userProfile);
+          this.role.set(user.tipoUsuario || 'trabajador');
+        } catch {
+          this.role.set('trabajador');
+        }
+      } else {
+        // Rol por defecto para usuarios MSAL sin perfil del backend
+        this.role.set('trabajador');
+      }
+      
+      // Intentar obtener token silenciosamente
+      this.msal.instance.acquireTokenSilent({
+        scopes: environment.apiConfig.scopes,
+        account: msalAccounts[0]
+      }).then(result => {
+        localStorage.setItem('token', result.accessToken);
+      }).catch(error => {
+        console.log('No se pudo obtener token silenciosamente:', error);
+      });
+    } else {
+      // No hay sesión, limpiar todo
+      this.isLogged.set(false);
+      this.role.set(null);
+      localStorage.removeItem('auth');
+      localStorage.removeItem('token');
+      localStorage.removeItem('userProfile');
     }
   }
 }

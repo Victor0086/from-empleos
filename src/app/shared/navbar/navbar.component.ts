@@ -37,7 +37,9 @@ export class NavbarComponent implements OnInit, OnDestroy {
     private perfilReload: PerfilReloadService
   ) {
     this.dialog = inject(MatDialog);
+    // Restaurar estado inmediatamente
     this.auth.restore();
+    this.initializeAuthState();
     // Suscribirse solo al evento global de login
     this.authEvents.login$.subscribe(() => this.login());
   }
@@ -48,6 +50,34 @@ export class NavbarComponent implements OnInit, OnDestroy {
       this.perfilReload.triggerReload();
     }, 100);
     this.showMenu = false;
+  }
+
+  private initializeAuthState() {
+    // Verificar si hay cuentas MSAL activas
+    const accounts = this.authService.instance.getAllAccounts();
+    if (accounts.length > 0) {
+      // Establecer cuenta activa si no está establecida
+      if (!this.authService.instance.getActiveAccount()) {
+        this.authService.instance.setActiveAccount(accounts[0]);
+      }
+      // Actualizar estado de login inmediatamente
+      this.setLoginDisplay();
+      // Sincronizar con AuthService
+      this.auth.isLogged.set(true);
+      
+      // Obtener token y guardarlo
+      this.authService.acquireTokenSilent({
+        scopes: environment.apiConfig.scopes,
+        account: accounts[0]
+      }).subscribe({
+        next: (result) => {
+          localStorage.setItem('token', result.accessToken);
+        },
+        error: (error) => {
+          console.log('Token silencioso falló:', error);
+        }
+      });
+    }
   }
 
 
@@ -75,11 +105,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
   // Eliminar constructor duplicado, ya está arriba con PerfilReloadService
 
   ngOnInit(): void {
-    // Asegurar que el usuario activo esté seteado tras recarga
-    const accounts = this.authService.instance.getAllAccounts();
-    if (accounts.length > 0 && !this.authService.instance.getActiveAccount()) {
-      this.authService.instance.setActiveAccount(accounts[0]);
-    }
+    // Inicializar estado inmediatamente
+    this.initializeAuthState();
+    
+    // Escuchar cambios en el estado de MSAL
     this.msalBroadcastService.inProgress$
       .pipe(
         filter((status: InteractionStatus) => status === InteractionStatus.None),
@@ -87,6 +116,9 @@ export class NavbarComponent implements OnInit, OnDestroy {
       )
       .subscribe(() => {
         this.setLoginDisplay();
+        // Sincronizar estado con AuthService
+        const accounts = this.authService.instance.getAllAccounts();
+        this.auth.isLogged.set(accounts.length > 0);
       });
 
     // Cerrar menú al hacer clic fuera
@@ -108,11 +140,17 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   setLoginDisplay() {
-    this.loginDisplay = this.authService.instance.getAllAccounts().length > 0;
-    if (this.loginDisplay) {
-      const account = this.authService.instance.getAllAccounts()[0];
-      this.userEmail = account?.username || '';
-      this.given_name = account?.name || '';
+    const accounts = this.authService.instance.getAllAccounts();
+    this.loginDisplay = accounts.length > 0;
+    
+    if (this.loginDisplay && accounts[0]) {
+      const account = accounts[0];
+      this.userEmail = account.username || '';
+      this.given_name = account.name || '';
+      
+      // Sincronizar con AuthService signals
+      this.auth.isLogged.set(true);
+      
       // Obtener foto de perfil si existe en el perfil guardado
       const userProfile = localStorage.getItem('userProfile');
       if (userProfile) {
@@ -122,18 +160,28 @@ export class NavbarComponent implements OnInit, OnDestroy {
         } catch (e) {
           console.error('Error al parsear userProfile:', e);
           this.fotoUrl = '';
-          localStorage.removeItem('userProfile'); // Limpia el dato corrupto
+          localStorage.removeItem('userProfile');
         }
       } else {
         this.fotoUrl = '';
       }
+      
       // Guardar token en localStorage para el interceptor
       this.authService.acquireTokenSilent({
         scopes: environment.apiConfig.scopes,
         account: account
-      }).subscribe(result => {
-        localStorage.setItem('token', result.accessToken);
+      }).subscribe({
+        next: (result) => {
+          localStorage.setItem('token', result.accessToken);
+        },
+        error: (error) => {
+          console.log('Error obteniendo token silencioso:', error);
+        }
       });
+    } else {
+      // No hay sesión activa
+      this.auth.isLogged.set(false);
+      this.auth.role.set(null);
     }
   }
 

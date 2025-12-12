@@ -10,13 +10,13 @@
     <div class="collapse navbar-collapse" id="navMain">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <!-- Trabajador -->
-        <li class="nav-item" *ngIf="loginDisplay && auth.role()==='trabajador'">
+        <li class="nav-item" *ngIf="auth.isLogged() && auth.role() === 'trabajador'">
           <a class="nav-link" routerLink="/ofertas" routerLinkActive="active">Ofertas</a>
         </li>
 
 
         <!-- Empresa -->
-        <li class="nav-item" *ngIf="loginDisplay && auth.role()==='empleador'">
+        <li class="nav-item" *ngIf="auth.isLogged() && auth.role() === 'empleador'">
           <a class="nav-link" routerLink="/ofertas/nueva" routerLinkActive="active">Publicar</a>
         </li>
       </ul>

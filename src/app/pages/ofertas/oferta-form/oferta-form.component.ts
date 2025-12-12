@@ -37,8 +37,8 @@ export class OfertaFormComponent {
       comuna:['', Validators.required],
       area:['', Validators.required],
       tipo:['', Validators.required],
-      sueldoDesde:[null],
-      sueldoHasta:[null],
+      sueldoDesde: [null as number | null], 
+      sueldoHasta: [null as number | null],
       descripcion:['', [Validators.required, Validators.minLength(10)]],
     });
   }
