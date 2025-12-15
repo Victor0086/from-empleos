@@ -35,8 +35,31 @@ export class MisContratosComponent implements OnInit {
       return !!this.currentUserId;
     }
 
+    // Método para determinar si el usuario actual es el trabajador en este contrato
+    esTrabajador(contrato: Contrato): boolean {
+      // Primero intentar por trabajadorId si existe
+      if (contrato.postulacion?.trabajadorId) {
+        return this.currentUserId === contrato.postulacion.trabajadorId;
+      }
+      // Fallback: usar email si trabajadorId es undefined
+      if (contrato.postulacion?.trabajadorEmail && this.currentUserEmail) {
+        return this.currentUserEmail === contrato.postulacion.trabajadorEmail;
+      }
+      // Si no tenemos manera de identificar, asumir que NO es trabajador por seguridad
+      return false;
+    }
+
+    // Método para obtener el rol del usuario en este contrato
+    obtenerRolEnContrato(contrato: Contrato): string {
+      if (this.esTrabajador(contrato)) {
+        return 'Trabajador';
+      } else {
+        return 'Empleador';
+      }
+    }
+
     puedeRechazar(contrato: Contrato): boolean {
-      return contrato.estado === 'PENDIENTE_FIRMAS' && this.currentUserId === contrato.postulacion.trabajadorId && !contrato.firmaTrabajador;
+      return contrato.estado === 'PENDIENTE_FIRMAS' && this.esTrabajador(contrato) && !contrato.firmaTrabajador;
     }
 
     // Verificar si el usuario actual ya firmó el contrato
@@ -45,7 +68,7 @@ export class MisContratosComponent implements OnInit {
         return false;
       }
       
-      const soyTrabajador = this.currentUserId === contrato.postulacion.trabajadorId;
+      const soyTrabajador = this.esTrabajador(contrato);
       
       // Si la firma no es null, significa que ya firmó (contiene fecha como string)
       const yaFirme = soyTrabajador ? 
@@ -57,7 +80,7 @@ export class MisContratosComponent implements OnInit {
 
     rechazarContrato(contrato: Contrato) {
       // Verificar si ya firmó antes de rechazar
-      const soyTrabajador = this.currentUserId === contrato.postulacion.trabajadorId;
+      const soyTrabajador = this.esTrabajador(contrato);
       const yaFirme = soyTrabajador ? contrato.firmaTrabajador : contrato.firmaEmpleador;
       
       if (yaFirme) {
@@ -102,10 +125,11 @@ export class MisContratosComponent implements OnInit {
     }
    
   contratos: Contrato[] = [];
-  displayedColumns: string[] = ['id', 'oferta', 'estado', 'firmas', 'acciones'];
+  displayedColumns: string[] = ['id', 'oferta', 'rol', 'estado', 'firmas', 'acciones'];
   loading = true;
   firmandoId: number | null = null;
   currentUserId: string = '';
+  currentUserEmail: string = '';
   
   router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
@@ -145,6 +169,13 @@ export class MisContratosComponent implements OnInit {
         if (jwt) {
           const payload = JSON.parse(atob(jwt.replace(/-/g, '+').replace(/_/g, '/')));
           this.currentUserId = payload.sub;
+          this.currentUserEmail = payload.email || payload.emails?.[0] || '';
+          
+          console.log('=== DEBUG USUARIO ACTUAL ===');
+          console.log('Current User ID (sub):', this.currentUserId);
+          console.log('Email del usuario:', this.currentUserEmail);
+          console.log('Nombre:', payload.name || 'No name');
+          console.log('=== FIN DEBUG USUARIO ===');
         }
       } catch (e) {
         console.error('No se pudo obtener el sub del JWT', e);
@@ -208,8 +239,13 @@ export class MisContratosComponent implements OnInit {
           
           // Actualizar vista inmediatamente
           this.loading = false;
+          
+          // Forzar múltiples actualizaciones para asegurar que la vista se refresque
           this.cdr.detectChanges();
+          setTimeout(() => this.cdr.detectChanges(), 100);
+          
           console.log(' Contratos cargados exitosamente:', this.contratos.length);
+          console.log(' Estados actuales:', this.contratos.map(c => ({ id: c.id, estado: c.estado, firmaTrabajador: c.firmaTrabajador })));
         },
         error: (err) => {
           console.error(' Error cargando contratos:', err);
@@ -304,42 +340,48 @@ export class MisContratosComponent implements OnInit {
   }
 
   puedeFirmar(contrato: Contrato): boolean {
+    console.log(`🔍 DEBUG puedeFirmar - Contrato ${contrato.id}:`);
+    console.log('- Estado contrato:', contrato.estado);
+    console.log('- currentUserId:', this.currentUserId);
+    console.log('- trabajadorId:', contrato.postulacion?.trabajadorId);
+    console.log('- firmaTrabajador:', contrato.firmaTrabajador);
+    console.log('- firmaEmpleador:', contrato.firmaEmpleador);
+    console.log('- firmandoId:', this.firmandoId);
+    
     // No se puede firmar si está en proceso de firma
     if (this.firmandoId === contrato.id) {
+      console.log('❌ No puede firmar: está en proceso de firma');
       return false;
     }
 
     // Si el contrato no está pendiente de firmas, nadie puede firmar
     if (contrato.estado !== 'PENDIENTE_FIRMAS') {
+      console.log('❌ No puede firmar: estado no es PENDIENTE_FIRMAS');
       return false;
     }
 
     // Verificar que tenemos userId válido
     if (!this.currentUserId) {
+      console.log('❌ No puede firmar: currentUserId vacío');
       return false;
     }
 
     // Identificar si soy trabajador o empleador
-    const soyTrabajador = this.currentUserId === contrato.postulacion?.trabajadorId;
-    
-    console.log(` puedeFirmar - Contrato ${contrato.id}:`, {
-      currentUserId: this.currentUserId,
-      trabajadorId: contrato.postulacion?.trabajadorId,
-      soyTrabajador,
-      firmaTrabajador: contrato.firmaTrabajador,
-      firmaEmpleador: contrato.firmaEmpleador
-    });
+    const soyTrabajador = this.esTrabajador(contrato);
+    console.log('- soyTrabajador:', soyTrabajador);
+    console.log('- trabajadorEmail:', contrato.postulacion?.trabajadorEmail);
+    console.log('- currentUserEmail:', this.currentUserEmail);
 
     if (soyTrabajador) {
-      // Si soy trabajador, puedo firmar solo si no he firmado aún
-      const yaFirme = contrato.firmaTrabajador && contrato.firmaTrabajador !== '';
-      console.log(` Trabajador ya firmó: ${yaFirme}`);
-      return !yaFirme;
+      // El trabajador puede firmar si su firma está vacía
+      const puedeFiremar = !contrato.firmaTrabajador;
+      console.log('Trabajador puede firmar:', puedeFiremar);
+      return puedeFiremar;
     } else {
-      // Si soy empleador, puedo firmar solo si no he firmado aún
-      const yaFirme = contrato.firmaEmpleador && contrato.firmaEmpleador !== '';
-      console.log(` Empleador ya firmó: ${yaFirme}`);
-      return !yaFirme;
+      // El empleador puede firmar si el trabajador ya firmó y él no ha firmado
+      const puedeFiremar = !!contrato.firmaTrabajador && !contrato.firmaEmpleador;
+      console.log('Empleador puede firmar:', puedeFiremar);
+      return puedeFiremar;
     }
   }
 
@@ -393,32 +435,20 @@ export class MisContratosComponent implements OnInit {
         const contratoActualizado = respuesta.contrato || respuesta; 
         const mensajeServidor = respuesta.mensaje || 'Contrato firmado exitosamente';
 
-        // Actualizar el contrato en la lista local inmediatamente
-        const index = this.contratos.findIndex(c => c.id === contratoActualizado.id);
-        if (index !== -1) {
-          this.contratos[index] = { ...contratoActualizado };
-          console.log('Contrato actualizado localmente:', this.contratos[index]);
-        }
-        
         this.firmandoId = null;
         
-        // Mostrar mensaje basado en el estado del contrato
-        if (contratoActualizado.estado === 'ACTIVO') {
-          alert('¡Contrato completamente firmado! Ambas partes han firmado y el contrato está activo.');
-          // Notificar al notario si es necesario
-          this.notificarNotario(contratoActualizado);
-        } else {
-          alert(mensajeServidor + ' La interfaz se actualizará para mostrar el nuevo estado.');
-        }
-
-        // Forzar detección de cambios
-        this.cdr.detectChanges();
+        // Mostrar mensaje inmediato
+        alert(mensajeServidor);
         
-        // Recargar contratos después de un breve delay para asegurar sincronización
+        // Forzar recarga completa para asegurar que se muestren los datos actualizados del backend
+        console.log('Recargando contratos inmediatamente para mostrar cambios...');
+        this.cargarContratos();
+        
+        // Recargar una segunda vez después de un delay para confirmar
         setTimeout(() => {
-          console.log('Recargando contratos para confirmar estado actualizado...');
+          console.log('Recarga adicional para confirmar estado actualizado...');
           this.cargarContratos();
-        }, 1000);
+        }, 2000);
       },
       error: (err) => {
         console.error('Error al firmar contrato:', err);

@@ -248,6 +248,10 @@ export class OfertasListComponent implements OnInit {
     this.router.navigate(['/ofertas/nueva']);
   }
 
+  verMisContratos() {
+    this.router.navigate(['/mis-contratos']);
+  }
+
   cambiarEstado(oferta: Oferta) {
     const nuevoEstado: 'ABIERTA' | 'CERRADA' = oferta.estado === 'ABIERTA' ? 'CERRADA' : 'ABIERTA';
     const accion = nuevoEstado === 'CERRADA' ? 'cerrar' : 'reabrir';

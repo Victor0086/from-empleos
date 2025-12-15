@@ -35,8 +35,17 @@
             <ng-container matColumnDef="oferta">
                 <th mat-header-cell *matHeaderCellDef> Oferta </th>
                 <td mat-cell *matCellDef="let contrato">
-                    <!-- Aquí accederíamos al título de la oferta si el backend lo envía en la postulación -->
-                    Oferta #{{contrato.postulacion.idOferta}}
+                    {{ contrato.postulacion?.tituloOferta || 'Oferta #' + contrato.postulacion.idOferta }}
+                </td>
+            </ng-container>
+
+            <!-- Rol Column -->
+            <ng-container matColumnDef="rol">
+                <th mat-header-cell *matHeaderCellDef> Mi Rol </th>
+                <td mat-cell *matCellDef="let contrato">
+                    <mat-chip-option [color]="esTrabajador(contrato) ? 'accent' : 'primary'" selected>
+                        {{obtenerRolEnContrato(contrato)}}
+                    </mat-chip-option>
                 </td>
             </ng-container>
 
@@ -55,24 +64,38 @@
                 <th mat-header-cell *matHeaderCellDef> Estado Firmas </th>
                 <td mat-cell *matCellDef="let contrato">
                     <div class="d-flex gap-2 align-items-center">
+                        <!-- Trabajador -->
                         <span [class.text-success]="contrato.firmaTrabajador" [class.text-muted]="!contrato.firmaTrabajador">
-                            <mat-icon [matTooltip]="contrato.firmaTrabajador ? ('Firmado el ' + (contrato.firmaTrabajador | date:'short')) : 'Sin firma'">person</mat-icon>
+                            <mat-icon [matTooltip]="contrato.firmaTrabajador ? ('Firmado por trabajador el ' + (contrato.firmaTrabajador | date:'short')) : 'Falta firma del trabajador'">person</mat-icon>
                         </span>
                         <span *ngIf="contrato.firmaTrabajador" class="firma-fecha ms-1 text-secondary">
                             <small>{{ contrato.firmaTrabajador | date:'short' }}</small>
                         </span>
+                        <span *ngIf="!contrato.firmaTrabajador" class="text-danger ms-1">
+                            <small><b>Falta firma del trabajador</b></small>
+                        </span>
+                        <!-- Empleador -->
                         <span [class.text-success]="contrato.firmaEmpleador" [class.text-muted]="!contrato.firmaEmpleador">
-                            <mat-icon [matTooltip]="contrato.firmaEmpleador ? ('Firmado el ' + (contrato.firmaEmpleador | date:'short')) : 'Sin firma'">business</mat-icon>
+                            <mat-icon [matTooltip]="contrato.firmaEmpleador ? ('Firmado por empleador el ' + (contrato.firmaEmpleador | date:'short')) : 'Falta firma del empleador'">business</mat-icon>
                         </span>
                         <span *ngIf="contrato.firmaEmpleador" class="firma-fecha ms-1 text-secondary">
                             <small>{{ contrato.firmaEmpleador | date:'short' }}</small>
                         </span>
+                        <span *ngIf="!contrato.firmaEmpleador" class="text-danger ms-1">
+                            <small><b>Falta firma del empleador</b></small>
+                        </span>
+                        <!-- Notario -->
                         <span [class.text-success]="contrato.firmaNotario" [class.text-muted]="!contrato.firmaNotario">
                             <mat-icon [matTooltip]="contrato.firmaNotario ? ('Validado el ' + (contrato.firmaNotario | date:'short')) : 'Sin validación'">gavel</mat-icon>
                         </span>
                         <span *ngIf="contrato.firmaNotario" class="firma-fecha ms-1 text-secondary">
                             <small>{{ contrato.firmaNotario | date:'short' }}</small>
                         </span>
+                    </div>
+                    <!-- Mensaje claro de a quién le falta firmar -->
+                    <div *ngIf="contrato.estado === 'PENDIENTE_FIRMAS'">
+                        <span *ngIf="!contrato.firmaTrabajador" class="badge bg-warning text-dark me-2">Falta firma del trabajador</span>
+                        <span *ngIf="contrato.firmaTrabajador && !contrato.firmaEmpleador" class="badge bg-warning text-dark">Falta firma del empleador</span>
                     </div>
                 </td>
             </ng-container>
@@ -81,13 +104,15 @@
             <ng-container matColumnDef="acciones">
                 <th mat-header-cell *matHeaderCellDef> Acciones </th>
                 <td mat-cell *matCellDef="let contrato">
+                    <!-- Botón Firmar Contrato solo si falta la firma del usuario actual -->
                     <button mat-raised-button color="primary" *ngIf="puedeFirmar(contrato)" (click)="firmar(contrato)"
                         [disabled]="firmandoId === contrato.id">
                         <mat-icon>edit</mat-icon>
                         {{ firmandoId === contrato.id ? 'Firmando...' : 'Firmar Contrato' }}
                     </button>
 
-                    <button mat-raised-button color="warn" *ngIf="contrato.estado === 'PENDIENTE_FIRMAS' && esUsuarioDelContrato(contrato)" (click)="rechazarContrato(contrato)"
+                    <!-- Botón Rechazar Contrato solo para trabajador antes de firmar -->
+                    <button mat-raised-button color="warn" *ngIf="puedeRechazar(contrato)" (click)="rechazarContrato(contrato)"
                         [disabled]="firmandoId === contrato.id">
                         <mat-icon>close</mat-icon>
                         Rechazar Contrato
@@ -96,8 +121,11 @@
                     <!-- Mensaje informativo después de firmar -->
                     <div *ngIf="contrato.estado === 'PENDIENTE_FIRMAS' && yaFirme(contrato)" class="alert alert-info p-2 mb-0">
                         <mat-icon class="me-2">check_circle</mat-icon>
-                        <small><strong>Contrato firmado exitosamente.</strong><br>
-                        Esperando firma del empleador para finalizar el proceso.</small>
+                        <small><strong>Ya firmaste este contrato.</strong><br>
+                        <span *ngIf="esTrabajador(contrato) && !contrato.firmaEmpleador">Esperando firma del empleador para finalizar.</span>
+                        <span *ngIf="!esTrabajador(contrato) && !contrato.firmaTrabajador">Esperando que el trabajador firme primero.</span>
+                        <span *ngIf="!esTrabajador(contrato) && contrato.firmaTrabajador && !contrato.firmaEmpleador">Puedes firmar el contrato ahora.</span>
+                        </small>
                     </div>
 
                     <!-- Mensaje si el contrato está activo -->

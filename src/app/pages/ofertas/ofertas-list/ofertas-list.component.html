@@ -12,10 +12,16 @@
     <div *ngIf="!loading">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2>Mis Ofertas Laborales</h2>
-      <button class="btn btn-primary" (click)="crearNuevaOferta()">
-        <mat-icon>add</mat-icon>
-        Nueva Oferta
-      </button>
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-success" (click)="verMisContratos()">
+          <mat-icon>description</mat-icon>
+          Mis Contratos
+        </button>
+        <button class="btn btn-primary" (click)="crearNuevaOferta()">
+          <mat-icon>add</mat-icon>
+          Nueva Oferta
+        </button>
+      </div>
     </div>
     </div>
 
