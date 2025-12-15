@@ -45,8 +45,24 @@ export class MisContratosComponent implements OnInit {
       if (contrato.postulacion?.trabajadorEmail && this.currentUserEmail) {
         return this.currentUserEmail === contrato.postulacion.trabajadorEmail;
       }
-      // Si no tenemos manera de identificar, asumir que NO es trabajador por seguridad
-      return false;
+      
+      // FALLBACK FINAL: Usar lógica de negocio cuando no tenemos trabajadorId ni trabajadorEmail
+      // Si el contrato está pendiente de firmas y no hay firma de trabajador, 
+      // asumimos que el usuario actual es el trabajador que debe firmar primero
+      if (contrato.estado === 'PENDIENTE_FIRMAS' && !contrato.firmaTrabajador) {
+        console.log('FALLBACK: Asumiendo que es trabajador porque no hay firmaTrabajador');
+        return true;
+      }
+      
+      // Si hay firmaTrabajador pero no firmaEmpleador, el usuario actual debe ser el empleador
+      if (contrato.estado === 'PENDIENTE_FIRMAS' && contrato.firmaTrabajador && !contrato.firmaEmpleador) {
+        console.log('FALLBACK: Asumiendo que es empleador porque falta firmaEmpleador');
+        return false;
+      }
+      
+      // Por defecto, asumir trabajador si no podemos determinar (la mayoría de casos son trabajadores)
+      console.log('FALLBACK: Asumiendo trabajador por defecto');
+      return true;
     }
 
     // Método para obtener el rol del usuario en este contrato
@@ -350,19 +366,19 @@ export class MisContratosComponent implements OnInit {
     
     // No se puede firmar si está en proceso de firma
     if (this.firmandoId === contrato.id) {
-      console.log('❌ No puede firmar: está en proceso de firma');
+      console.log('No puede firmar: está en proceso de firma');
       return false;
     }
 
     // Si el contrato no está pendiente de firmas, nadie puede firmar
     if (contrato.estado !== 'PENDIENTE_FIRMAS') {
-      console.log('❌ No puede firmar: estado no es PENDIENTE_FIRMAS');
+      console.log('No puede firmar: estado no es PENDIENTE_FIRMAS');
       return false;
     }
 
     // Verificar que tenemos userId válido
     if (!this.currentUserId) {
-      console.log('❌ No puede firmar: currentUserId vacío');
+      console.log('No puede firmar: currentUserId vacío');
       return false;
     }
 
@@ -440,15 +456,28 @@ export class MisContratosComponent implements OnInit {
         // Mostrar mensaje inmediato
         alert(mensajeServidor);
         
-        // Forzar recarga completa para asegurar que se muestren los datos actualizados del backend
-        console.log('Recargando contratos inmediatamente para mostrar cambios...');
+        // FORZAR RECARGA INMEDIATA Y MÚLTIPLE PARA ASEGURAR ACTUALIZACIÓN
+        console.log(' Recargando contratos inmediatamente...');
+        
+        // Limpiar datos actuales y forzar recarga desde cero
+        this.contratos = [];
+        this.loading = true;
+        this.cdr.detectChanges();
+        
+        // Recargar inmediatamente
         this.cargarContratos();
         
-        // Recargar una segunda vez después de un delay para confirmar
+        // Recarga adicional después de 1 segundo
         setTimeout(() => {
-          console.log('Recarga adicional para confirmar estado actualizado...');
+          console.log(' Recarga adicional #1...');
           this.cargarContratos();
-        }, 2000);
+        }, 1000);
+        
+        // Recarga final después de 3 segundos para confirmar estado
+        setTimeout(() => {
+          console.log('Recarga final para confirmar estado actualizado...');
+          this.cargarContratos();
+        }, 3000);
       },
       error: (err) => {
         console.error('Error al firmar contrato:', err);

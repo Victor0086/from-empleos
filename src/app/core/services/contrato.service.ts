@@ -91,7 +91,7 @@ export class ContratoService {
                     });
                   });
                 } else {
-                  console.log('⚠️  No se recibieron contratos del backend');
+                  console.log('No se recibieron contratos del backend');
                   console.log('Esto podría indicar:');
                   console.log('1. El usuario no tiene contratos en la BD');
                   console.log('2. El backend no está encontrando al usuario correctamente');
@@ -102,7 +102,7 @@ export class ContratoService {
                 return Array.isArray(contratos) ? contratos : [];
               }),
               catchError(error => {
-                console.error('❌ Error obteniendo contratos:', error);
+                console.error('Error obteniendo contratos:', error);
                 console.error('Status:', error.status);
                 console.error('Message:', error.message);
                 console.error('Error body:', error.error);
