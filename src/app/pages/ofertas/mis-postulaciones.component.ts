@@ -3,6 +3,7 @@ import { Router, NavigationEnd, RouterLink } from '@angular/router';
 import { DatePipe, CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { MsalService } from '@azure/msal-angular';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-mis-postulaciones',
@@ -157,7 +158,7 @@ export class MisPostulacionesComponent implements OnInit {
           alert('No se encontró el trabajador_id.');
           return;
         }
-        const response = await fetch(`http://localhost:8081/api/postulaciones/${postulacion.oferta_id || postulacion.id}/${trabajadorId}`, {
+        const response = await fetch(`${this.apiUrl}/postulaciones/${postulacion.oferta_id || postulacion.id}/${trabajadorId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -181,6 +182,7 @@ export class MisPostulacionesComponent implements OnInit {
   postulaciones: any[] = [];
   auth = inject(AuthService);
   private msal = inject(MsalService);
+  private apiUrl = environment.apiConfig.url;
 
   // Inyectar ChangeDetectorRef
   private cdr = inject(ChangeDetectorRef);
@@ -255,9 +257,15 @@ export class MisPostulacionesComponent implements OnInit {
     }
     
     try {
-      console.log('📡 Haciendo petición al backend...');
+      console.log(' Haciendo petición al backend...');
       
-      const response = await fetch('http://localhost:8081/api/postulaciones?email', {
+      // Obtener email del usuario logueado
+      const activeAccount = this.msal.instance.getActiveAccount();
+      const userEmail = activeAccount?.username || activeAccount?.idTokenClaims?.emails?.[0] || '';
+      
+      console.log('Email del usuario:', userEmail);
+      
+      const response = await fetch(`${this.apiUrl}/postulaciones?email=${encodeURIComponent(userEmail)}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -9,7 +9,7 @@ export const environment = {
     }
   },
   apiConfig: {
-    url: 'https://web-empleos-backend-1763998253344.azurewebsites.net/api',
+    url: 'http://localhost:8081/api',
     scopes: ['https://instantjobb2c.onmicrosoft.com/7dd9b923-7aec-407e-b352-7c349ff960a9/access_as_user']
   }
 };

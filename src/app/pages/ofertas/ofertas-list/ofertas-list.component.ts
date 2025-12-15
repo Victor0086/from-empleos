@@ -1,7 +1,6 @@
 import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/services/auth.service';
-import { PostulacionDialogComponent } from '../postulacion-dialog.component';
 import { PostulantesDialogComponent } from '../postulantes-dialog.component';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatTableModule } from '@angular/material/table';
@@ -35,7 +34,7 @@ interface Oferta {
 @Component({
   standalone: true,
   selector: 'app-ofertas-list',
-  imports: [CommonModule, MatIconModule, MatButtonModule, NgFor, NgIf, MatDialogModule, PostulacionDialogComponent, PostulantesDialogComponent],
+  imports: [CommonModule, MatIconModule, MatButtonModule, NgFor, NgIf, MatDialogModule, PostulantesDialogComponent],
   templateUrl: './ofertas-list.component.html',
   styleUrls: ['./ofertas-list.component.css']
 })
@@ -147,7 +146,7 @@ export class OfertasListComponent implements OnInit {
     return 'badge bg-secondary text-white';
   }
 
-  abrirPostulacionModal(ofertaId: number) {
+  async abrirPostulacionModal(ofertaId: number) {
     // Verificar estado de MSAL (que es el que realmente se usa)
     const accounts = this.msalService.instance.getAllAccounts();
     const isLogged = accounts.length > 0;
@@ -159,11 +158,18 @@ export class OfertasListComponent implements OnInit {
       this.router.navigate(['/postulacion'], { queryParams: { ofertaId: ofertaId } });
       return;
     }
-    this.dialog.open(PostulacionDialogComponent, {
-      width: '350px',
-      autoFocus: false,
-      panelClass: 'modal-postulacion',
-    });
+    
+    try {
+      const { PostulacionDialogComponent } = await import('../postulacion-dialog.component');
+      this.dialog.open(PostulacionDialogComponent, {
+        width: '350px',
+        autoFocus: false,
+        panelClass: 'modal-postulacion',
+      });
+    } catch (error) {
+      console.error('Error al cargar PostulacionDialogComponent:', error);
+      alert('Error al abrir el diálogo de postulación. Por favor, intente nuevamente.');
+    }
   }
 
   verDetalle(id: number) {

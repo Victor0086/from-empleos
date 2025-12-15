@@ -25,16 +25,19 @@ import { environment } from '../../../environments/environment';
           <div>
             <strong>Curriculum:</strong>
             <ng-container *ngIf="postulante.curriculumName && postulante.curriculumPath; else noCV">
-              <a [href]="'http://localhost:8081/uploads/curriculums/' + postulante.curriculumPath" target="_blank">{{ postulante.curriculumName }}</a>
+              <a [href]="apiUrl.replace('/api', '') + '/uploads/curriculums/' + postulante.curriculumPath" target="_blank">{{ postulante.curriculumName }}</a>
             </ng-container>
             <ng-template #noCV>No disponible</ng-template>
           </div>
-          <div class="mt-2" *ngIf="postulante.estado === 'PENDIENTE' || postulante.estado == null || postulante.estado === undefined">
-            <button mat-raised-button color="primary" (click)="aceptarPostulacion(postulante)" class="me-2">
-              Aceptar
+          <div class="mt-2">
+            <small class="text-muted">Estado actual: {{ postulante.estado || 'Sin estado' }}</small>
+          </div>
+          <div class="mt-2" *ngIf="postulante.estado === 'PENDIENTE' || postulante.estado == null || postulante.estado === undefined || postulante.estado === 'ENVIADA'">
+            <button class="btn btn-success me-2" (click)="aceptarPostulacion(postulante)">
+              <span class="material-icons me-1" style="font-size:1rem;vertical-align:middle;">check_circle</span> Aceptar
             </button>
-            <button mat-raised-button color="warn" (click)="rechazarPostulacion(postulante)">
-              Rechazar
+            <button class="btn btn-danger" (click)="rechazarPostulacion(postulante)">
+              <span class="material-icons me-1" style="font-size:1rem;vertical-align:middle;">cancel</span> Rechazar
             </button>
           </div>
           <div class="mt-2" *ngIf="postulante.estado === 'ACEPTADA'">
@@ -73,7 +76,7 @@ import { environment } from '../../../environments/environment';
 })
 export class PostulantesDialogComponent implements OnDestroy {
   private http = inject(HttpClient);
-  private apiUrl = environment.apiConfig.url;
+  public apiUrl = environment.apiConfig.url;
   private refreshInterval: any;
 
   constructor(
@@ -145,10 +148,17 @@ export class PostulantesDialogComponent implements OnDestroy {
 
   private crearContrato(postulante: any) {
     const token = localStorage.getItem('token');
-    const headers: any = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+    if (!token) {
+      console.error('No hay token disponible para crear contrato');
+      alert('Error: No hay token de autenticación');
+      return;
     }
+
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+    
     const ofertaId = postulante.oferta_id || postulante.ofertaId;
     const trabajadorId = postulante.trabajadorId || postulante.trabajador_id;
     
@@ -158,20 +168,50 @@ export class PostulantesDialogComponent implements OnDestroy {
       postulante
     });
     
-    // Body solo con los campos requeridos por el backend
+    if (!ofertaId || !trabajadorId) {
+      console.error('Faltan datos requeridos para crear contrato:', { ofertaId, trabajadorId });
+      alert('Error: Faltan datos del postulante para crear el contrato');
+      return;
+    }
+    
+    // Probar diferentes formatos de datos que el backend podría esperar
     const contratoData = {
+      ofertaId: ofertaId,
+      trabajadorId: trabajadorId,
       oferta_id: ofertaId,
       trabajador_id: trabajadorId
     };
 
+    console.log('Enviando datos del contrato:', contratoData);
+
     this.http.post(`${this.apiUrl}/contratos`, contratoData, { headers }).subscribe({
       next: (response) => {
         console.log('Contrato creado automáticamente:', response);
-        // Actualizar el estado del postulante a CONTRATO_GENERADO
-        postulante.estado = 'CONTRATO_GENERADO';
+        // No actualizar el estado aquí para evitar conflictos de CHECK constraint
+        // El backend debe manejar la actualización del estado
+        alert('Contrato generado exitosamente');
+        
+        // Refrescar los estados para obtener el estado actual desde el backend
+        setTimeout(() => {
+          this.refrescarEstados();
+        }, 1000);
       },
       error: (error) => {
         console.error('Error al crear contrato:', error);
+        console.error('Detalles del error:', {
+          status: error.status,
+          statusText: error.statusText,
+          message: error.message,
+          error: error.error
+        });
+        
+        let errorMsg = 'Error al crear el contrato. ';
+        if (error.error && error.error.message) {
+          errorMsg += error.error.message;
+        } else {
+          errorMsg += `Código de error: ${error.status}`;
+        }
+        alert(errorMsg);
       }
     });
   }

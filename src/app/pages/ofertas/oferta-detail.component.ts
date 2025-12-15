@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MsalService } from '@azure/msal-angular';
 import { MatDialog } from '@angular/material/dialog';
@@ -35,7 +35,7 @@ interface Oferta {
     <div class="mb-2"><strong>Horario:</strong> {{ ofertaData.horario }}</div>
     <div class="mb-2"><strong>Duración:</strong> {{ ofertaData.duracion }} (trabajo esporádico)</div>
     <div class="mb-2"><strong>Sueldo:</strong> {{ '$' + ofertaData.sueldo }}</div>
-    <button class="btn btn-outline-primary mt-3">Postulación rápida</button>
+    <button class="btn btn-outline-primary mt-3" (click)="abrirPostulacionModal(ofertaData.id)">Postulación rápida</button>
   </div>
   <div *ngIf="!oferta" class="container py-4">
     <h2>Oferta no encontrada</h2>
@@ -45,6 +45,7 @@ export class OfertaDetailComponent {
   loading: boolean = false;
   oferta?: Oferta;
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private msalService = inject(MsalService);
   private dialog = inject(MatDialog);
   private http = inject(HttpClient);
@@ -55,7 +56,29 @@ export class OfertaDetailComponent {
   ordenActual: 'relevantes' | 'recientes' = 'relevantes';
   ofertasOrdenadas: Oferta[] = [...this.data];
 
- 
+  async abrirPostulacionModal(ofertaId: number) {
+    // Verificar estado de MSAL
+    const accounts = this.msalService.instance.getAllAccounts();
+    const isLogged = accounts.length > 0;
+    
+    if (isLogged) {
+      // Si está logueado, redirigir a la página de postulación
+      this.router.navigate(['/postulacion'], { queryParams: { ofertaId: ofertaId } });
+      return;
+    }
+    
+    try {
+      const { PostulacionDialogComponent } = await import('./postulacion-dialog.component');
+      this.dialog.open(PostulacionDialogComponent, {
+        width: '350px',
+        autoFocus: false,
+        panelClass: 'modal-postulacion',
+      });
+    } catch (error) {
+      console.error('Error al cargar PostulacionDialogComponent:', error);
+      alert('Error al abrir el diálogo de postulación. Por favor, intente nuevamente.');
+    }
+  }
 }
 
 
