@@ -44,15 +44,31 @@
 
               <div class="col-md-6">
                 <mat-form-field class="w-100" appearance="outline">
-                  <mat-label>Sueldo desde</mat-label>
-                  <input matInput type="number" formControlName="sueldoDesde">
+                  <mat-label>Sueldo desde (CLP)</mat-label>
+                  <input matInput 
+                         type="text" 
+                         class="currency-input"
+                         formControlName="sueldoDesde"
+                         (input)="formatCurrency($event, 'sueldoDesde')"
+                         (focus)="onCurrencyFocus($event, 'sueldoDesde')"
+                         (blur)="onCurrencyBlur($event, 'sueldoDesde')"
+                         placeholder="Ej: 500.000">
+                  <span matPrefix>$ </span>
                 </mat-form-field>
               </div>
 
               <div class="col-md-6">
                 <mat-form-field class="w-100" appearance="outline">
-                  <mat-label>Sueldo hasta</mat-label>
-                  <input matInput type="number" formControlName="sueldoHasta">
+                  <mat-label>Sueldo hasta (CLP)</mat-label>
+                  <input matInput 
+                         type="text" 
+                         class="currency-input"
+                         formControlName="sueldoHasta"
+                         (input)="formatCurrency($event, 'sueldoHasta')"
+                         (focus)="onCurrencyFocus($event, 'sueldoHasta')"
+                         (blur)="onCurrencyBlur($event, 'sueldoHasta')"
+                         placeholder="Ej: 800.000">
+                  <span matPrefix>$ </span>
                 </mat-form-field>
               </div>
 

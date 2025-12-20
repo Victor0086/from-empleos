@@ -34,7 +34,7 @@ interface Oferta {
     <div class="mb-2"><strong>Descripción:</strong> {{ ofertaData.descripcion }}</div>
     <div class="mb-2"><strong>Horario:</strong> {{ ofertaData.horario }}</div>
     <div class="mb-2"><strong>Duración:</strong> {{ ofertaData.duracion }} (trabajo esporádico)</div>
-    <div class="mb-2"><strong>Sueldo:</strong> {{ '$' + ofertaData.sueldo }}</div>
+    <div class="mb-2"><strong>Sueldo:</strong> {{ ofertaData.sueldo | currency:'CLP':'symbol':'1.0-0':'es-CL' }}</div>
     <button class="btn btn-outline-primary mt-3" (click)="abrirPostulacionModal(ofertaData.id)">Postulación rápida</button>
   </div>
   <div *ngIf="!oferta" class="container py-4">

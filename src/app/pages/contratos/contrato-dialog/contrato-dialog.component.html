@@ -21,7 +21,7 @@
 
         <p>
           <strong>SEGUNDO:</strong> La remuneración será la suma de 
-          <strong>$ {{ data.sueldo || '0' }}</strong> pesos mensuales.
+          <strong>{{ data.sueldo | currency:'CLP':'symbol':'1.0-0':'es-CL' }}</strong> pesos mensuales.
         </p>
 
         <p>

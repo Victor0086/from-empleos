@@ -1,10 +1,15 @@
-import { ApplicationConfig, importProvidersFrom, APP_INITIALIZER } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom, APP_INITIALIZER, LOCALE_ID } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { provideHttpClient, withFetch, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { environment } from '../environments/environment';
+import { registerLocaleData } from '@angular/common';
+import localeEs from '@angular/common/locales/es-CL';
+
+// Registrar el locale español de Chile
+registerLocaleData(localeEs);
 
 import {
   MsalModule,
@@ -80,6 +85,10 @@ export const appConfig: ApplicationConfig = {
     importProvidersFrom(BrowserModule),
     importProvidersFrom(BrowserAnimationsModule),
     provideHttpClient(withFetch(), withInterceptorsFromDi()),
+    {
+      provide: LOCALE_ID,
+      useValue: 'es-CL'
+    },
     {
       provide: HTTP_INTERCEPTORS,
       useClass: MsalInterceptor,

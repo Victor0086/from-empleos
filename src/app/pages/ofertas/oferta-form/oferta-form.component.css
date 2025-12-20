@@ -16,3 +16,18 @@ h2 {
   color: #333;
   font-weight: 600;
 }
+
+/* Estilos para campos de moneda */
+input[type="text"].currency-input {
+  text-align: right;
+  font-family: monospace;
+}
+
+.currency-input:focus {
+  text-align: left;
+}
+
+.mat-form-field .mat-form-field-prefix {
+  color: #666;
+  font-weight: 500;
+}

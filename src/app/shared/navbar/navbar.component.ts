@@ -1,5 +1,5 @@
 // Other imports...
-import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, HostListener } from '@angular/core';
 import { PerfilReloadService } from '../../core/services/perfil-reload.service';
 import { Router } from '@angular/router';
 import { RouterLink, RouterLinkActive } from '@angular/router';
@@ -45,10 +45,14 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   verMiCV() {
+    this.showMenu = false; // Cerrar menú al hacer click
     this.router.navigate(['/perfil']);
     setTimeout(() => {
       this.perfilReload.triggerReload();
     }, 100);
+  }
+
+  closeMenu() {
     this.showMenu = false;
   }
 
@@ -101,6 +105,21 @@ export class NavbarComponent implements OnInit, OnDestroy {
   given_name: string = '';
   loadingLogin = false;
   private readonly _destroying$ = new Subject<void>();
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event) {
+    const target = event.target as HTMLElement;
+    const dropdownButton = document.querySelector('.user-menu-button');
+    const dropdownMenu = document.querySelector('.user-dropdown-menu');
+    
+    // Si el click no fue en el botón del menú ni en el menú mismo, cerrar el menú
+    if (this.showMenu && 
+        !dropdownButton?.contains(target) && 
+        !dropdownMenu?.contains(target)) {
+      this.showMenu = false;
+      this.cdr.detectChanges();
+    }
+  }
 
   // Eliminar constructor duplicado, ya está arriba con PerfilReloadService
 

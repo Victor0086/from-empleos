@@ -41,7 +41,7 @@ import { environment } from '../../../environments/environment';
               <div class="col-md-8">
                 <h5 class="card-title text-primary">
                   <i class="fas fa-briefcase me-2"></i>
-                  {{ p.titulo || p.ofertaTitulo || p.oferta_titulo || p.nombre_oferta || 'Oferta sin título' }}
+                  {{ getTituloOferta(p) }}
                 </h5>
                 <p class="card-text mb-1">
                   <i class="fas fa-building me-2"></i>
@@ -265,7 +265,7 @@ export class MisPostulacionesComponent implements OnInit {
       
       console.log('Email del usuario:', userEmail);
       
-      const response = await fetch(`${this.apiUrl}/postulaciones?email=${encodeURIComponent(userEmail)}`, {
+      const response = await fetch(`${this.apiUrl}/postulaciones/mis-postulaciones?email=${encodeURIComponent(userEmail)}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -297,6 +297,10 @@ export class MisPostulacionesComponent implements OnInit {
         
         // Asegurar que siempre sea un array
         this.postulaciones = Array.isArray(data) ? data : [];
+        
+        // Enriquecer postulaciones con datos de ofertas si no los tiene
+        await this.enriquecerPostulaciones();
+        
         // Delay mínimo para UX fluida
         await this.delay(800);
         this.cdr.detectChanges();
@@ -322,6 +326,50 @@ export class MisPostulacionesComponent implements OnInit {
   // Función helper para crear delays
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // Método para obtener el título de la oferta de manera robusta
+  getTituloOferta(postulacion: any): string {
+    return postulacion.titulo || 
+           postulacion.ofertaTitulo || 
+           postulacion.oferta_titulo || 
+           postulacion.tituloOferta ||
+           postulacion.nombre_oferta || 
+           postulacion.oferta?.titulo ||
+           'Oferta sin título';
+  }
+
+  // Método para enriquecer postulaciones con datos de ofertas si faltan
+  private async enriquecerPostulaciones() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    for (let postulacion of this.postulaciones) {
+      // Si no tiene título, intentar obtenerlo de la oferta
+      if (!this.getTituloOferta(postulacion) || this.getTituloOferta(postulacion) === 'Oferta sin título') {
+        try {
+          const ofertaId = postulacion.oferta_id || postulacion.idOferta || postulacion.id;
+          if (ofertaId) {
+            const response = await fetch(`${this.apiUrl}/ofertas/${ofertaId}`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (response.ok) {
+              const oferta = await response.json();
+              if (oferta && oferta.titulo) {
+                postulacion.titulo = oferta.titulo;
+                postulacion.ofertaTitulo = oferta.titulo;
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error obteniendo datos de la oferta:', error);
+        }
+      }
+    }
   }
   }
 

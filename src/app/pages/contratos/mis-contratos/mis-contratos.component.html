@@ -35,7 +35,7 @@
             <ng-container matColumnDef="oferta">
                 <th mat-header-cell *matHeaderCellDef> Oferta </th>
                 <td mat-cell *matCellDef="let contrato">
-                    {{ contrato.postulacion?.tituloOferta || 'Oferta #' + contrato.postulacion.idOferta }}
+                    {{ contrato.postulacion?.tituloOferta || 'Oferta #' + (contrato.postulacion?.idOferta || contrato.idOferta || 'Sin ID') }}
                 </td>
             </ng-container>
 

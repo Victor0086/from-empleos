@@ -9,12 +9,12 @@ import { environment } from '../../../environments/environment';
   selector: 'app-postulantes-dialog',
   template: `
     <h2 mat-dialog-title>Postulantes</h2>
-    <mat-dialog-content>
+    <mat-dialog-content class="postulantes-content">
       <div *ngIf="!data || data.length === 0">
         <p>No hay postulantes para esta oferta.</p>
       </div>
       <div *ngIf="data && data.length > 0">
-        <div *ngFor="let postulante of data" class="mb-3 p-2 border rounded">
+        <div *ngFor="let postulante of data" class="postulante-card mb-3 p-3 border rounded">
           <div><strong>Nombre:</strong> {{ postulante.nombres || postulante.nombre }} {{ postulante.apellidos || '' }}</div>
           <div *ngIf="postulante.email"><strong>Email:</strong> {{ postulante.email }}</div>
           <div *ngIf="postulante.rut"><strong>RUT:</strong> {{ postulante.rut }}</div>
@@ -22,12 +22,16 @@ import { environment } from '../../../environments/environment';
           <div *ngIf="postulante.experiencia"><strong>Experiencia:</strong> {{ postulante.experiencia }}</div>
           <div *ngIf="postulante.descripcion_experiencia"><strong>Descripción experiencia:</strong> {{ postulante.descripcion_experiencia }}</div>
           <div *ngIf="postulante.motivacion"><strong>Motivación:</strong> {{ postulante.motivacion }}</div>
-          <div>
+          <div class="curriculum-section">
             <strong>Curriculum:</strong>
             <ng-container *ngIf="postulante.curriculumName && postulante.curriculumPath; else noCV">
-              <a [href]="apiUrl.replace('/api', '') + '/uploads/curriculums/' + postulante.curriculumPath" target="_blank">{{ postulante.curriculumName }}</a>
+              <br><a [href]="apiUrl.replace('/api', '') + '/uploads/curriculums/' + postulante.curriculumPath" 
+                     target="_blank" 
+                     class="btn btn-sm btn-outline-primary mt-1 curriculum-btn">
+                <i class="fas fa-download me-1"></i>Descargar {{ postulante.curriculumName }}
+              </a>
             </ng-container>
-            <ng-template #noCV>No disponible</ng-template>
+            <ng-template #noCV><span class="text-muted">No disponible</span></ng-template>
           </div>
           <div class="mt-2">
             <small class="text-muted">Estado actual: {{ postulante.estado || 'Sin estado' }}</small>
@@ -71,6 +75,31 @@ import { environment } from '../../../environments/environment';
       <button mat-button mat-dialog-close>Cerrar</button>
     </mat-dialog-actions>
   `,
+  styles: [`
+    .postulantes-content {
+      max-width: 600px;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+    .postulante-card {
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6 !important;
+    }
+    .curriculum-section {
+      margin-top: 10px;
+    }
+    .curriculum-btn {
+      word-break: break-all;
+      max-width: 100%;
+      overflow-wrap: break-word;
+      white-space: normal;
+      text-align: left;
+      padding: 6px 12px;
+    }
+    :host ::ng-deep .mat-dialog-container {
+      max-width: 650px !important;
+    }
+  `],
   standalone: true,
   imports: [CommonModule, NgIf, NgFor, MatDialogModule, MatButtonModule],
 })
